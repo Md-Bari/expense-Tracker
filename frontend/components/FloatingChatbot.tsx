@@ -221,14 +221,47 @@ export default function FloatingChatbot() {
             window.speechSynthesis.cancel(); // Interrupt speech
             updateVoiceStatus('thinking');
 
-            const newUserMsg: Message = { role: 'user', content: `[Voice] ${text}` };
+            // Strip any leading AI self-echo that got recorded at the beginning of the transcription
+            let cleanQuery = text;
+            const lastAiReply = currentReplyRef.current;
+            if (lastAiReply) {
+              const normalizedText = text.toLowerCase();
+              const normalizedAi = lastAiReply.toLowerCase().replace(/[\*\`\#\_]/g, '').replace(/[\r\n]+/g, ' ').trim();
+              
+              if (normalizedText.startsWith(normalizedAi)) {
+                cleanQuery = text.substring(lastAiReply.length).trim();
+              } else {
+                const words = normalizedAi.split(/\s+/).filter(w => w.length > 2);
+                if (words.length > 3) {
+                  const searchStr = words.slice(0, 4).join(' ');
+                  const idx = normalizedText.indexOf(searchStr);
+                  if (idx >= 0 && idx < 30) {
+                    const lastWord = words[words.length - 1];
+                    const endIdx = normalizedText.indexOf(lastWord, idx);
+                    if (endIdx >= 0) {
+                      cleanQuery = text.substring(endIdx + lastWord.length).trim();
+                    } else {
+                      cleanQuery = text.substring(idx + searchStr.length).trim();
+                    }
+                  }
+                }
+              }
+            }
+
+            cleanQuery = cleanQuery.replace(/^[^a-zA-Z0-9]+/, '').trim();
+            if (!cleanQuery) {
+              updateVoiceStatus('listening');
+              return;
+            }
+
+            const newUserMsg: Message = { role: 'user', content: `[Voice] ${cleanQuery}` };
             const updatedMessages = [...messagesRef.current, newUserMsg];
             setMessages(updatedMessages);
 
             try {
               const history = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
               const response = await api.post('/ai/chat/', {
-                message: text,
+                message: cleanQuery,
                 history: history,
               });
 
