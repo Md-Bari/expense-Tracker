@@ -15,6 +15,7 @@ import {
   LogOut,
   Bell,
   ScanLine,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -49,6 +50,10 @@ export default function Sidebar() {
     { name: 'PDF Reports', href: '/reports', icon: FileText },
     { name: 'AI Advisor', href: '/chat', icon: Bot },
   ];
+
+  if (user?.is_staff || user?.is_superuser) {
+    navItems.push({ name: 'Admin Console', href: '/admin', icon: ShieldCheck });
+  }
 
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen fixed left-0 top-0 text-slate-300">
