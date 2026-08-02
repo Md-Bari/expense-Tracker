@@ -53,7 +53,15 @@ function cleanTextForSpeech(text: string): string {
   // 6. Clean up trailing ".0" in numbers (e.g. "100.0" -> "100")
   clean = clean.replace(/(\d+)\.0\b/g, '$1');
 
-  // 7. General cleanup of multiple spaces/periods
+  // 7. Remove literal "undefined" or "null" leaked from code
+  clean = clean.replace(/\bundefined\b/gi, '');
+  clean = clean.replace(/\bnull\b/gi, '');
+
+  // 8. Remove table separators, pipes, equals
+  clean = clean.replace(/\|/g, ' ');
+  clean = clean.replace(/[\=\-]{3,}/g, ' ');
+
+  // 9. General cleanup of multiple spaces/periods
   clean = clean.replace(/\.{2,}/g, '.');
   clean = clean.replace(/\s+/g, ' ');
 
