@@ -1,0 +1,10 @@
+.env
+.next/
+node_modules/
+backend/media_files/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+.DS_Store
