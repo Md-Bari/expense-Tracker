@@ -771,7 +771,7 @@ export default function AIChatPage() {
 
                   {!isBot && (
                     <div className="h-8 w-8 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center shrink-0 font-bold border border-slate-700">
-                      {user.username.substring(0, 1).toUpperCase()}
+                      {user?.username?.substring(0, 1).toUpperCase() || 'U'}
                     </div>
                   )}
                 </div>

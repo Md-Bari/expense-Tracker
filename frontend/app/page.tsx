@@ -431,6 +431,8 @@ export default function LandingPage() {
           </div>
 
         </div>
+      </section>
+
       {/* Testimonials Section */}
       <section className="max-w-7xl mx-auto px-6 py-20 border-t border-slate-900/60 z-10">
         <div className="text-center space-y-3 mb-16">
