@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  allowedDevOrigins: [
+    'creative-playback-introduced-forms.trycloudflare.com',
+  ],
 };
 
 export default nextConfig;
