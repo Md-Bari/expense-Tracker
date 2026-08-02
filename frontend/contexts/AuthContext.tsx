@@ -10,6 +10,8 @@ interface User {
   email: string;
   currency: string;
   monthly_budget_limit: number | null;
+  is_staff?: boolean;
+  is_superuser?: boolean;
 }
 
 interface AuthContextType {
@@ -87,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     Cookies.remove('refresh_token');
     setUser(null);
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = '/';
     }
   };
 

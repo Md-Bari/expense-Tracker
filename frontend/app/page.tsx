@@ -16,7 +16,9 @@ import {
   User, 
   Loader2,
   Lock,
-  Wallet
+  Wallet,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface Plan {
@@ -31,6 +33,28 @@ interface Plan {
 export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
+    if (savedTheme === 'light') {
+      setTheme('light');
+      document.body.classList.add('light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (theme === 'dark') {
+      setTheme('light');
+      document.body.classList.add('light');
+      localStorage.setItem('theme', 'light');
+    } else {
+      setTheme('dark');
+      document.body.classList.remove('light');
+      localStorage.setItem('theme', 'dark');
+    }
+  };
+
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
 
@@ -174,10 +198,12 @@ export default function LandingPage() {
       {/* Navbar Header */}
       <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-slate-950/70 border-b border-slate-900/80 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-600/20">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => router.push('/')}>
+            <img 
+              src="/aura_logo.png" 
+              alt="Aura Logo" 
+              className="h-8 w-8 rounded-lg object-cover shadow shadow-indigo-600/20 border border-slate-850"
+            />
             <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">Aura</span>
           </div>
 
@@ -188,6 +214,13 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl bg-slate-900/60 border border-slate-850 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
+            </button>
             {authLoading ? (
               <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
             ) : isAuthenticated ? (

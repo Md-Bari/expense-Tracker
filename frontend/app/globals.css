@@ -76,3 +76,131 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
 }
+
+/* ==========================================
+   Light Mode System Overrides
+   ========================================== */
+body.light {
+  background-color: #f8fafc !important; /* slate-50 */
+  color: #0f172a !important; /* slate-900 */
+}
+
+body.light header {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light header span, 
+body.light header a, 
+body.light header button:not(.bg-gradient-to-r) {
+  color: #0f172a !important;
+}
+
+body.light section {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light h1, 
+body.light h2, 
+body.light h3, 
+body.light h4, 
+body.light h5,
+body.light .text-white {
+  color: #0f172a !important;
+}
+
+body.light p, 
+body.light .text-slate-400, 
+body.light .text-slate-300, 
+body.light .text-slate-350 {
+  color: #475569 !important; /* slate-600 */
+}
+
+body.light .bg-slate-900,
+body.light .bg-slate-900\/20,
+body.light .bg-slate-900\/30,
+body.light .bg-slate-900\/40,
+body.light .bg-slate-900\/50,
+body.light .bg-slate-950,
+body.light .bg-slate-950\/60,
+body.light .bg-slate-950\/80,
+body.light .bg-slate-950\/40 {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light aside {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #334155 !important;
+}
+
+body.light aside a:hover, 
+body.light aside a.bg-indigo-600\/15 {
+  background-color: rgba(79, 70, 229, 0.08) !important;
+  color: #4f46e5 !important;
+}
+
+body.light aside .text-white {
+  color: #0f172a !important;
+}
+
+body.light input, 
+body.light textarea, 
+body.light select {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important; /* slate-300 */
+  color: #0f172a !important;
+}
+
+body.light table th {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #64748b !important;
+}
+
+body.light table td {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  color: #334155 !important;
+}
+
+body.light table tr:hover {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+body.light .border-slate-800, 
+body.light .border-slate-850, 
+body.light .border-slate-900, 
+body.light .border-slate-900\/60,
+body.light .border-slate-900\/80,
+body.light .border-slate-700 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light .text-indigo-400 {
+  color: #4f46e5 !important;
+}
+
+body.light .text-violet-400 {
+  color: #7c3aed !important;
+}
+
+body.light .bg-indigo-950,
+body.light .bg-violet-950/60 {
+  background-color: rgba(79, 70, 229, 0.06) !important;
+}
+
+body.light .bg-slate-850,
+body.light .bg-slate-950 {
+  background-color: #f1f5f9 !important; /* slate-100 */
+}
+
+body.light .text-slate-550,
+body.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+body.light .glass-panel {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+

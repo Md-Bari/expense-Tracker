@@ -16,11 +16,35 @@ import {
   Bell,
   ScanLine,
   ShieldCheck,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
+    if (savedTheme === 'light') {
+      setTheme('light');
+      document.body.classList.add('light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (theme === 'dark') {
+      setTheme('light');
+      document.body.classList.add('light');
+      localStorage.setItem('theme', 'light');
+    } else {
+      setTheme('dark');
+      document.body.classList.remove('light');
+      localStorage.setItem('theme', 'dark');
+    }
+  };
+
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
@@ -59,9 +83,11 @@ export default function Sidebar() {
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen fixed left-0 top-0 text-slate-300">
       {/* Brand logo */}
       <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-        <div className="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/20">
-          A
-        </div>
+        <img 
+          src="/aura_logo.png" 
+          alt="Aura Logo" 
+          className="h-9 w-9 rounded-lg object-cover shadow-lg shadow-indigo-500/20 border border-slate-800"
+        />
         <div>
           <h1 className="text-lg font-bold text-white tracking-tight">Aura AI</h1>
           <p className="text-xs text-indigo-400 font-medium">Smart Wealth Manager</p>
@@ -120,13 +146,22 @@ export default function Sidebar() {
             <p className="text-sm font-medium text-white truncate">{user?.username || 'User'}</p>
             <p className="text-xs text-slate-500 truncate">{user?.email || 'user@example.com'}</p>
           </div>
-          <button
-            onClick={logout}
-            className="p-1.5 rounded-lg hover:bg-rose-950/30 hover:text-rose-400 text-slate-500 transition-colors"
-            title="Log Out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg hover:bg-slate-800 hover:text-white text-slate-500 transition-colors cursor-pointer"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={logout}
+              className="p-1.5 rounded-lg hover:bg-rose-950/30 hover:text-rose-400 text-slate-500 transition-colors cursor-pointer"
+              title="Log Out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
     </aside>
