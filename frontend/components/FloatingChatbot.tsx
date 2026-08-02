@@ -158,6 +158,7 @@ export default function FloatingChatbot() {
   
   const recognitionRef = useRef<any>(null);
   const utteranceRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Mutable references to avoid stale closure state
   const messagesRef = useRef<Message[]>(messages);
@@ -178,13 +179,16 @@ export default function FloatingChatbot() {
     currentStatusRef.current = status;
   };
 
+  // Stop audio on unmount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-      };
-    }
+    return () => {
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+        } catch (e) {}
+        audioRef.current = null;
+      }
+    };
   }, []);
 
   const scrollToBottom = () => {
@@ -253,8 +257,7 @@ export default function FloatingChatbot() {
           // 1. Catch "stop" commands synchronously
           const stopWords = ['stop', 'stop talking', 'be quiet', 'shut up', 'pause'];
           if (stopWords.some(word => textLower === word || textLower.startsWith(word))) {
-            window.speechSynthesis.cancel();
-            updateVoiceStatus('listening');
+            interruptSpeaking();
             return;
           }
 
@@ -268,7 +271,7 @@ export default function FloatingChatbot() {
 
           // 3. User spoke a new prompt
           if (currentStatusRef.current === 'speaking' || currentStatusRef.current === 'listening') {
-            window.speechSynthesis.cancel(); // Interrupt speech
+            interruptSpeaking(); // Interrupt speech
             updateVoiceStatus('thinking');
 
             // Strip any leading AI self-echo that got recorded at the beginning of the transcription
@@ -355,7 +358,7 @@ export default function FloatingChatbot() {
     }
   }, []);
 
-  const speak = (text: string) => {
+  const speak = async (text: string) => {
     if (typeof window === 'undefined') return;
 
     // Cache the spoken text to filter out self-recordings
@@ -372,73 +375,70 @@ export default function FloatingChatbot() {
       return;
     }
 
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
+    // Stop any currently playing audio
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+      } catch (e) {}
+      audioRef.current = null;
     }
-    window.speechSynthesis.cancel();
 
-    // 80ms delay to prevent Chrome SpeechSynthesis lockup bugs
-    setTimeout(() => {
-      if (!isVoiceActiveRef.current && currentStatusRef.current !== 'thinking') return;
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
+    updateVoiceStatus('speaking');
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.volume = 1.0;
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      
-      // Choose female voice
-      const voices = window.speechSynthesis.getVoices();
-      const clearVoice = voices.find(v => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes('google us english') || 
-          name.includes('zira') || 
-          name.includes('samantha') || 
-          name.includes('google uk english female') ||
-          (name.includes('female') && v.lang.startsWith('en-'))
-        );
+    try {
+      const response = await api.post('/ai/tts/', { text: cleanText }, { responseType: 'blob' });
+      const blob = response.data;
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        audioRef.current = null;
+        if (isVoiceActiveRef.current) {
+          updateVoiceStatus('listening');
+        } else {
+          updateVoiceStatus('idle');
+        }
+      };
+
+      audio.onerror = () => {
+        audioRef.current = null;
+        if (isVoiceActiveRef.current) {
+          updateVoiceStatus('listening');
+        } else {
+          updateVoiceStatus('idle');
+        }
+      };
+
+      audio.play().catch((err) => {
+        console.error("Audio playback error:", err);
+        if (isVoiceActiveRef.current) {
+          updateVoiceStatus('listening');
+        } else {
+          updateVoiceStatus('idle');
+        }
       });
-      utterance.lang = 'en-US';
-
-      if (clearVoice) {
-        utterance.voice = clearVoice;
+    } catch (error) {
+      console.error("TTS generation error:", error);
+      if (isVoiceActiveRef.current) {
+        updateVoiceStatus('listening');
+      } else {
+        updateVoiceStatus('idle');
       }
-
-      utterance.onstart = () => {
-        updateVoiceStatus('speaking');
-      };
-
-      utterance.onend = () => {
-        if (isVoiceActiveRef.current) {
-          updateVoiceStatus('listening');
-        } else {
-          updateVoiceStatus('idle');
-        }
-      };
-
-      utterance.onerror = () => {
-        if (isVoiceActiveRef.current) {
-          updateVoiceStatus('listening');
-        } else {
-          updateVoiceStatus('idle');
-        }
-      };
-
-      utteranceRef.current = utterance;
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
-      window.speechSynthesis.speak(utterance);
-    }, 80);
+    }
   };
 
   const interruptSpeaking = () => {
-    window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+      } catch (e) {}
+      audioRef.current = null;
+    }
     if (isVoiceActiveRef.current) {
       updateVoiceStatus('listening');
+    } else {
+      updateVoiceStatus('idle');
     }
   };
 
@@ -449,11 +449,10 @@ export default function FloatingChatbot() {
     }
 
     if (isVoiceActive) {
-      window.speechSynthesis.cancel();
+      interruptSpeaking();
       try {
         recognitionRef.current.stop();
       } catch (e) {}
-      updateVoiceStatus('idle');
       setIsVoiceActive(false);
     } else {
       setIsVoiceActive(true);
@@ -468,12 +467,11 @@ export default function FloatingChatbot() {
   };
 
   const handleClosePanel = () => {
-    window.speechSynthesis.cancel();
+    interruptSpeaking();
     try {
       if (recognitionRef.current) recognitionRef.current.stop();
     } catch (e) {}
     setIsVoiceActive(false);
-    updateVoiceStatus('idle');
     setIsOpen(false);
   };
 

@@ -162,6 +162,10 @@ CELERY_TIMEZONE = TIME_ZONE
 # Groq API Config
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 
+# ElevenLabs API Config
+ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', '')
+ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', '21m00Tcm4TlvDq8ikWAM')
+
 # Celery Beat Periodic Tasks
 from celery.schedules import crontab
 CELERY_BEAT_SCHEDULE = {
