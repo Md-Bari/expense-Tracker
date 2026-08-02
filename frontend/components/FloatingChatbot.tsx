@@ -18,6 +18,48 @@ const SAMPLE_PROMPTS = [
   "Generate a PDF report for this month"
 ];
 
+function cleanTextForSpeech(text: string): string {
+  if (!text) return '';
+
+  let clean = text;
+
+  // 1. Remove markdown links: [label](url) -> label
+  clean = clean.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+
+  // 2. Remove markdown formatting markers (*, _, `, #)
+  clean = clean.replace(/[\*\`\#\_]/g, '');
+
+  // 3. Clean up list bullets/numbers at the start of lines
+  clean = clean.split('\n')
+    .map(line => {
+      let trimmed = line.trim();
+      trimmed = trimmed.replace(/^[\-\*\+]\s+/, '');
+      trimmed = trimmed.replace(/^\d+\.\s+/, '');
+      return trimmed;
+    })
+    .filter(line => line.length > 0)
+    .join('. '); // Join lines with a period to enforce natural pauses between sentences/lists
+
+  // 4. Replace currency symbols with spoken words
+  clean = clean.replace(/৳/g, ' Taka ');
+  clean = clean.replace(/\$/g, ' dollars ');
+  clean = clean.replace(/€/g, ' euros ');
+  clean = clean.replace(/£/g, ' pounds ');
+
+  // 5. Replace slashes between words with " or " to avoid TTS reading "slash"
+  clean = clean.replace(/(\w+)\/(\w+)/g, '$1 or $2');
+  clean = clean.replace(/\s*\/\s*/g, ' or ');
+
+  // 6. Clean up trailing ".0" in numbers (e.g. "100.0" -> "100")
+  clean = clean.replace(/(\d+)\.0\b/g, '$1');
+
+  // 7. General cleanup of multiple spaces/periods
+  clean = clean.replace(/\.{2,}/g, '.');
+  clean = clean.replace(/\s+/g, ' ');
+
+  return clean.trim();
+}
+
 // Word-by-word reveal component with simple markdown parsing for natural typing look
 function NaturalMessageRenderer({ text, isNew }: { text: string; isNew: boolean }) {
   const [displayedText, setDisplayedText] = useState('');
@@ -311,10 +353,7 @@ export default function FloatingChatbot() {
     // Cache the spoken text to filter out self-recordings
     currentReplyRef.current = text;
 
-    const cleanText = text.replace(/\|/g, ' ')
-                         .replace(/[\=\-\_\*]{3,}/g, ' ')
-                         .replace(/[\*\`\#\_]/g, '')
-                         .trim();
+    const cleanText = cleanTextForSpeech(text);
     
     if (!cleanText) {
       if (isVoiceActiveRef.current) {
