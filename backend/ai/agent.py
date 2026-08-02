@@ -1,3 +1,4 @@
+from fsspec.transaction import Transaction
 import json
 import datetime
 from typing import TypedDict, List, Dict, Any
