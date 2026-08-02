@@ -431,6 +431,70 @@ export default function LandingPage() {
           </div>
 
         </div>
+      {/* Testimonials Section */}
+      <section className="max-w-7xl mx-auto px-6 py-20 border-t border-slate-900/60 z-10">
+        <div className="text-center space-y-3 mb-16">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-white">Loved by Wealth Builders</h2>
+          <p className="text-slate-400 text-xs max-w-lg mx-auto">
+            See how smart professionals, freelancers, and businesses in Bangladesh use Aura to manage cash flows and budgets.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Card 1 */}
+          <div className="p-6 rounded-2xl bg-slate-900/20 border border-slate-900 flex flex-col justify-between space-y-4 hover:border-indigo-500/10 transition-all">
+            <p className="text-slate-400 text-xs leading-relaxed italic">
+              "Aura has completely transformed how I handle my consulting income. The natural voice assistant responds in milliseconds, and the OCR scan takes all the pain out of logging business dinners!"
+            </p>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/user_avatar_1.png" 
+                alt="Sarah Rahman" 
+                className="h-10 w-10 rounded-full object-cover border border-indigo-500/20"
+              />
+              <div>
+                <div className="text-xs font-bold text-white">Sarah Rahman</div>
+                <div className="text-[10px] text-slate-500 font-medium">Management Consultant</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div className="p-6 rounded-2xl bg-slate-900/20 border border-slate-900 flex flex-col justify-between space-y-4 hover:border-indigo-500/10 transition-all">
+            <p className="text-slate-400 text-xs leading-relaxed italic">
+              "I love the safe SQL sandbox architecture. As a software engineer, knowing my financial database queries are programmatically isolated and read-only gives me total peace of mind."
+            </p>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/user_avatar_2.png" 
+                alt="Tanvir Ahmed" 
+                className="h-10 w-10 rounded-full object-cover border border-indigo-500/20"
+              />
+              <div>
+                <div className="text-xs font-bold text-white">Tanvir Ahmed</div>
+                <div className="text-[10px] text-slate-500 font-medium">Full Stack Developer</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="p-6 rounded-2xl bg-slate-900/20 border border-slate-900 flex flex-col justify-between space-y-4 hover:border-indigo-500/10 transition-all">
+            <p className="text-slate-400 text-xs leading-relaxed italic">
+              "Tracking savings targets for my retail shop was chaotic. Aura's custom charts and budget forecasting give me clean visual trends of my monthly business surplus in seconds."
+            </p>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/user_avatar_3.png" 
+                alt="Faisal Karim" 
+                className="h-10 w-10 rounded-full object-cover border border-indigo-500/20"
+              />
+              <div>
+                <div className="text-xs font-bold text-white">Faisal Karim</div>
+                <div className="text-[10px] text-slate-500 font-medium">Retail Shop Owner</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Pricing Section */}
