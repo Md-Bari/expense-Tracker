@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
-import Sidebar from '@/components/Sidebar';
+
 import { 
   Users, 
   UserPlus, 
@@ -54,6 +54,18 @@ export default function AdminDashboardPage() {
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersCount, setUsersCount] = useState(0);
+  const [usersStats, setUsersStats] = useState({
+    total_registered: 0,
+    staff_count: 0,
+    avg_budget: 0
+  });
+
+  // Reset page when active tab changes
+  useEffect(() => {
+    setUsersPage(1);
+  }, [activeTab]);
 
   // Create Admin Form States
   const [adminUsername, setAdminUsername] = useState('');
@@ -89,12 +101,16 @@ export default function AdminDashboardPage() {
   }, [isAuthenticated, authLoading, router]);
 
   // Load user list
-  const loadUsers = async (search = '') => {
+  const loadUsers = async (page = 1, search = '') => {
     if (!isAdmin) return;
     setUsersLoading(true);
     try {
-      const response = await api.get(`/subscriptions/admin/users/?search=${search}`);
-      setUsersList(response.data);
+      const response = await api.get(`/subscriptions/admin/users/?page=${page}&search=${search}`);
+      setUsersList(response.data.results);
+      setUsersCount(response.data.count);
+      if (response.data.stats) {
+        setUsersStats(response.data.stats);
+      }
     } catch (err) {
       console.error("Failed to load users list", err);
     } finally {
@@ -120,17 +136,18 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (isAdmin) {
       if (activeTab === 'users') {
-        loadUsers(searchQuery);
+        loadUsers(usersPage, searchQuery);
       } else if (activeTab === 'plans') {
         loadPlans();
       }
     }
-  }, [activeTab, isAdmin]);
+  }, [activeTab, usersPage, isAdmin]);
 
   // Handle Search submit
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loadUsers(searchQuery);
+    setUsersPage(1);
+    loadUsers(1, searchQuery);
   };
 
   // Handle Create Admin Submit
@@ -277,13 +294,7 @@ export default function AdminDashboardPage() {
 
   // Render Admin Dashboard layout
   return (
-    <div className="min-h-screen bg-slate-950 flex font-sans">
-      
-      {/* Shared Navigation Sidebar */}
-      <Sidebar />
-
-      {/* Main Admin Content Container */}
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto space-y-8 z-10">
+    <main className="flex-1 p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto space-y-8 z-10">
         
         {/* Title Banner */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-6">
@@ -344,7 +355,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-500 font-semibold uppercase">Total Registered</div>
-                  <div className="text-xl font-bold text-white">{usersList.length} Users</div>
+                  <div className="text-xl font-bold text-white">{usersStats.total_registered} Users</div>
                 </div>
               </div>
 
@@ -354,7 +365,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-500 font-semibold uppercase">Staff / Admins</div>
-                  <div className="text-xl font-bold text-white">{usersList.filter(u => u.is_staff || u.is_superuser).length} staff</div>
+                  <div className="text-xl font-bold text-white">{usersStats.staff_count} staff</div>
                 </div>
               </div>
 
@@ -365,10 +376,7 @@ export default function AdminDashboardPage() {
                 <div>
                   <div className="text-[10px] text-slate-500 font-semibold uppercase">Average Budget</div>
                   <div className="text-xl font-bold text-white">
-                    ৳{Math.round(
-                      usersList.reduce((acc, curr) => acc + (parseFloat(curr.monthly_budget_limit as string) || 0), 0) / 
-                      (usersList.filter(u => u.monthly_budget_limit).length || 1)
-                    ).toLocaleString()}
+                    ৳{Math.round(usersStats.avg_budget).toLocaleString()}
                   </div>
                 </div>
               </div>
@@ -445,6 +453,71 @@ export default function AdminDashboardPage() {
                       })}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* Pagination Controls */}
+              {usersList.length > 0 && usersCount > 10 && (
+                <div className="flex items-center justify-between px-6 py-4 bg-slate-900/20 border-t border-slate-900 text-slate-400 text-xs">
+                  <div>
+                    Showing{' '}
+                    <span className="font-semibold text-slate-200">
+                      {(usersPage - 1) * 10 + 1}
+                    </span>{' '}
+                    to{' '}
+                    <span className="font-semibold text-slate-200">
+                      {Math.min(usersPage * 10, usersCount)}
+                    </span>{' '}
+                    of{' '}
+                    <span className="font-semibold text-slate-200">{usersCount}</span>{' '}
+                    entries
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                      disabled={usersPage === 1}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                        usersPage === 1
+                          ? 'border-slate-850 text-slate-600 bg-slate-950/20 cursor-not-allowed'
+                          : 'border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 bg-slate-900/40 cursor-pointer'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    
+                    {/* Page Numbers */}
+                    {Array.from({ length: Math.ceil(usersCount / 10) }).map((_, idx) => {
+                      const pageNum = idx + 1;
+                      return (
+                        <button
+                          type="button"
+                          key={pageNum}
+                          onClick={() => setUsersPage(pageNum)}
+                          className={`h-8 w-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            usersPage === pageNum
+                              ? 'bg-indigo-600 text-white'
+                              : 'border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 bg-slate-900/40'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => setUsersPage((p) => Math.min(Math.ceil(usersCount / 10), p + 1))}
+                      disabled={usersPage >= Math.ceil(usersCount / 10)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                        usersPage >= Math.ceil(usersCount / 10)
+                          ? 'border-slate-850 text-slate-600 bg-slate-950/20 cursor-not-allowed'
+                          : 'border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 bg-slate-900/40 cursor-pointer'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -706,6 +779,5 @@ export default function AdminDashboardPage() {
         )}
 
       </main>
-    </div>
   );
 }

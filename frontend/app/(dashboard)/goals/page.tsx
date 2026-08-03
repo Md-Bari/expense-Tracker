@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
-import Sidebar from '@/components/Sidebar';
+
 import { motion } from 'framer-motion';
 import { Plus, Trash2, X, Target, PiggyBank, Award } from 'lucide-react';
 
@@ -123,10 +123,8 @@ export default function SavingsGoalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
-      <Sidebar />
-
-      <main className="ml-64 flex-1 p-8 overflow-y-auto">
+    <>
+      <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Header */}
           <div className="flex justify-between items-center">
@@ -371,6 +369,6 @@ export default function SavingsGoalsPage() {
           </motion.div>
         </div>
       )}
-    </div>
+    </>
   );
 }

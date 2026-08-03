@@ -1,9 +1,15 @@
 from django.db.models import Q
 from rest_framework import viewsets, permissions
+from rest_framework.pagination import PageNumberPagination
 # pyrefly: ignore [missing-import]
 from .models import Category, Transaction
 # pyrefly: ignore [missing-import]
 from .serializers import CategorySerializer, TransactionSerializer
+
+class TransactionPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -45,6 +51,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class TransactionViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = TransactionPagination
 
     def get_queryset(self):
         # Strict user scoping

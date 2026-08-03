@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Config for Aura (Development/Local mode)
+  Allows HTTP traffic to local network IPs so the APK can connect
+  to the Docker backend running on the same WiFi network.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Local Docker host - PC's network IP -->
+        <domain includeSubdomains="false">10.10.33.26</domain>
+        <!-- Standard local network ranges -->
+        <domain includeSubdomains="false">192.168.1.1</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- localhost for emulator -->
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

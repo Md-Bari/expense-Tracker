@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
-import Sidebar from '@/components/Sidebar';
+
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
@@ -101,12 +101,8 @@ export default function DashboardPage() {
   const goals = dashboardData?.goals || [];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
-      {/* Navigation sidebar */}
-      <Sidebar />
-
-      {/* Main content viewport */}
-      <main className="ml-64 flex-1 p-8 overflow-y-auto">
+    <>
+      <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-8">
           
           {/* Header */}
@@ -404,6 +400,6 @@ export default function DashboardPage() {
           </motion.div>
         </div>
       )}
-    </div>
+    </>
   );
 }

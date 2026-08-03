@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
-import Sidebar from '@/components/Sidebar';
+
 import { motion } from 'framer-motion';
 import {
   Plus,
@@ -33,6 +33,12 @@ export default function TransactionsPage() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [page, setPage] = useState(1);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, typeFilter, categoryFilter, startDate, endDate]);
 
   // Dialog & Modal state
   const [isOpen, setIsOpen] = useState(false);
@@ -76,9 +82,10 @@ export default function TransactionsPage() {
 
   // Fetch transactions
   const { data: transactions, isLoading: txLoading } = useQuery({
-    queryKey: ['transactions', search, typeFilter, categoryFilter, startDate, endDate],
+    queryKey: ['transactions', page, search, typeFilter, categoryFilter, startDate, endDate],
     queryFn: async () => {
       const params = new URLSearchParams();
+      params.append('page', page.toString());
       if (search) params.append('search', search);
       if (typeFilter) params.append('type', typeFilter);
       if (categoryFilter) params.append('category', categoryFilter);
@@ -243,10 +250,8 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
-      <Sidebar />
-
-      <main className="ml-64 flex-1 p-8 overflow-y-auto">
+    <>
+      <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex justify-between items-center">
@@ -344,8 +349,8 @@ export default function TransactionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-850 text-slate-300">
-                {transactions && transactions.length > 0 ? (
-                  transactions.map((tx: any) => (
+                {transactions?.results && transactions.results.length > 0 ? (
+                  transactions.results.map((tx: any) => (
                     <tr key={tx.id} className="hover:bg-slate-900/25 transition-colors">
                       <td className="py-3.5 px-6 font-medium text-slate-400">{tx.date}</td>
                       <td className="py-3.5 px-6">
@@ -406,6 +411,68 @@ export default function TransactionsPage() {
                 )}
               </tbody>
             </table>
+
+            {/* Pagination Controls */}
+            {transactions?.results && transactions.count > 10 && (
+              <div className="flex items-center justify-between px-6 py-4 bg-slate-900/20 border-t border-slate-850 text-slate-400 text-xs">
+                <div>
+                  Showing{' '}
+                  <span className="font-semibold text-slate-200">
+                    {(page - 1) * 10 + 1}
+                  </span>{' '}
+                  to{' '}
+                  <span className="font-semibold text-slate-200">
+                    {Math.min(page * 10, transactions.count)}
+                  </span>{' '}
+                  of{' '}
+                  <span className="font-semibold text-slate-200">{transactions.count}</span>{' '}
+                  entries
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                      page === 1
+                        ? 'border-slate-850 text-slate-600 bg-slate-950/20 cursor-not-allowed'
+                        : 'border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 bg-slate-900/40 cursor-pointer'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  
+                  {/* Page Numbers */}
+                  {Array.from({ length: Math.ceil(transactions.count / 10) }).map((_, idx) => {
+                    const pageNum = idx + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`h-8 w-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          page === pageNum
+                            ? 'bg-indigo-600 text-white'
+                            : 'border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 bg-slate-900/40'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(Math.ceil(transactions.count / 10), p + 1))}
+                    disabled={page >= Math.ceil(transactions.count / 10)}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                      page >= Math.ceil(transactions.count / 10)
+                        ? 'border-slate-850 text-slate-600 bg-slate-950/20 cursor-not-allowed'
+                        : 'border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 bg-slate-900/40 cursor-pointer'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -633,6 +700,6 @@ export default function TransactionsPage() {
           </motion.div>
         </div>
       )}
-    </div>
+    </>
   );
 }

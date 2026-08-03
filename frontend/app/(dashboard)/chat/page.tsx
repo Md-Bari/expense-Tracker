@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
-import Sidebar from '@/components/Sidebar';
+
 import { motion } from 'framer-motion';
 import { Send, Bot, User, RefreshCw, BarChart3, PieChart as PieIcon, LineChart, Mic } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart as RechartsLineChart, Line } from 'recharts';
@@ -14,6 +14,44 @@ interface Message {
   content: string;
   intent?: string;
   data?: any;
+}
+
+function convertNumberToWords(numStr: string): string {
+  const num = parseInt(numStr.replace(/,/g, ''), 10);
+  if (isNaN(num)) return numStr;
+  if (num === 0) return 'zero';
+
+  const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 
+                 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+  const scales = ['', 'thousand', 'million', 'billion'];
+
+  let words = '';
+  let numVal = num;
+  let scaleIdx = 0;
+
+  while (numVal > 0) {
+    const chunk = numVal % 1000;
+    if (chunk > 0) {
+      let chunkWords = '';
+      const hundreds = Math.floor(chunk / 100);
+      const remainder = chunk % 100;
+      if (hundreds > 0) {
+        chunkWords += ones[hundreds] + ' hundred ';
+      }
+      if (remainder > 0) {
+        if (remainder < 20) {
+          chunkWords += ones[remainder];
+        } else {
+          chunkWords += tens[Math.floor(remainder / 10)] + (remainder % 10 > 0 ? ' ' + ones[remainder % 10] : '');
+        }
+      }
+      words = chunkWords.trim() + ' ' + scales[scaleIdx] + ' ' + words;
+    }
+    numVal = Math.floor(numVal / 1000);
+    scaleIdx++;
+  }
+  return words.trim();
 }
 
 function cleanTextForSpeech(text: string): string {
@@ -36,7 +74,7 @@ function cleanTextForSpeech(text: string): string {
       return trimmed;
     })
     .filter(line => line.length > 0)
-    .join('. '); // Join lines with a period to enforce natural pauses between sentences/lists
+    .join('. ');
 
   // 4. Replace currency symbols with spoken words
   clean = clean.replace(/৳/g, ' Taka ');
@@ -44,12 +82,26 @@ function cleanTextForSpeech(text: string): string {
   clean = clean.replace(/€/g, ' euros ');
   clean = clean.replace(/£/g, ' pounds ');
 
-  // 5. Replace slashes between words with " or " to avoid TTS reading "slash"
+  // 5. Replace slashes between words with " or "
   clean = clean.replace(/(\w+)\/(\w+)/g, '$1 or $2');
   clean = clean.replace(/\s*\/\s*/g, ' or ');
 
   // 6. Clean up trailing ".0" in numbers (e.g. "100.0" -> "100")
   clean = clean.replace(/(\d+)\.0\b/g, '$1');
+
+  // Convert numeric digits to words to make it sound natural
+  clean = clean.replace(/\b(\d+(,\d{3})*)(\.\d+)?\b/g, (match, g1, g2, g3) => {
+    const intPart = convertNumberToWords(g1);
+    if (g3) {
+      const decDigits = g3.replace('.', '').split('');
+      const decPart = decDigits.map(digit => {
+        const d = parseInt(digit, 10);
+        return isNaN(d) ? '' : convertNumberToWords(digit);
+      }).join(' ');
+      return `${intPart} point ${decPart}`;
+    }
+    return intPart;
+  });
 
   // 7. Remove literal "undefined" or "null" leaked from code
   clean = clean.replace(/\bundefined\b/gi, '');
@@ -59,12 +111,14 @@ function cleanTextForSpeech(text: string): string {
   clean = clean.replace(/\|/g, ' ');
   clean = clean.replace(/[\=\-]{3,}/g, ' ');
 
-  // 9. General cleanup of multiple spaces/periods
+  // 9. General cleanup of multiple spaces/periods/commas
   clean = clean.replace(/\.{2,}/g, '.');
+  clean = clean.replace(/,+/g, ',');
   clean = clean.replace(/\s+/g, ' ');
 
   return clean.trim();
 }
+
 
 function MessageContent({ text }: { text: string }) {
   const parseMarkdown = (line: string) => {
@@ -352,12 +406,32 @@ export default function AIChatPage() {
           updateVoiceStatus('idle');
         }
       });
-    } catch (error) {
-      console.error("TTS generation error:", error);
-      if (isVoiceActiveRef.current) {
-        updateVoiceStatus('listening');
-      } else {
-        updateVoiceStatus('idle');
+    } catch (error: any) {
+      console.warn("TTS generation error, falling back to Web Speech API:", error?.message || error);
+      try {
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.onend = () => {
+          if (isVoiceActiveRef.current) {
+            updateVoiceStatus('listening');
+          } else {
+            updateVoiceStatus('idle');
+          }
+        };
+        utterance.onerror = () => {
+          if (isVoiceActiveRef.current) {
+            updateVoiceStatus('listening');
+          } else {
+            updateVoiceStatus('idle');
+          }
+        };
+        window.speechSynthesis.speak(utterance);
+      } catch (e: any) {
+        console.warn("Web Speech API fallback failed:", e?.message || e);
+        if (isVoiceActiveRef.current) {
+          updateVoiceStatus('listening');
+        } else {
+          updateVoiceStatus('idle');
+        }
       }
     }
   };
@@ -368,6 +442,11 @@ export default function AIChatPage() {
         audioRef.current.pause();
       } catch (e) {}
       audioRef.current = null;
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
     }
     if (isVoiceActiveRef.current) {
       updateVoiceStatus('listening');
@@ -627,15 +706,12 @@ export default function AIChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
-      <Sidebar />
-
-      <main className="ml-64 flex-1 h-screen flex flex-col bg-slate-950 relative overflow-hidden">
+      <main className="flex-1 h-screen flex flex-col bg-slate-950 relative overflow-hidden">
         {/* Voice Mode Fullscreen Overlay */}
         {isVoiceActive && (
           <div 
             onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
-            className={`absolute inset-0 bg-slate-950/98 flex flex-col items-center justify-center p-8 z-30 space-y-6 text-center ${
+            className={`fixed inset-y-0 left-64 right-0 bg-slate-950/98 flex flex-col items-center justify-center p-8 z-30 space-y-6 text-center ${
               voiceStatus === 'speaking' ? 'cursor-pointer hover:bg-slate-950/95 transition-all' : ''
             }`}
           >
@@ -827,6 +903,5 @@ export default function AIChatPage() {
           </form>
         </footer>
       </main>
-    </div>
   );
 }

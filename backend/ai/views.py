@@ -49,6 +49,7 @@ class AITTSEndpoint(APIView):
             )
 
         api_key = os.environ.get('ELEVENLABS_API_KEY', 'sk_88b38e88708fb1521fd909b54736a1245d41894273a30451')
+        # Rachel - warm, natural, conversational female voice
         voice_id = os.environ.get('ELEVENLABS_VOICE_ID', '21m00Tcm4TlvDq8ikWAM')
 
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
@@ -59,10 +60,12 @@ class AITTSEndpoint(APIView):
         }
         data = {
             "text": text,
-            "model_id": "eleven_monolingual_v1",
+            "model_id": "eleven_turbo_v2_5",
             "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.75
+                "stability": 0.35,
+                "similarity_boost": 0.80,
+                "style": 0.45,
+                "use_speaker_boost": True
             }
         }
 

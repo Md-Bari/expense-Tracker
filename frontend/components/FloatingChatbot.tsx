@@ -18,6 +18,44 @@ const SAMPLE_PROMPTS = [
   "Generate a PDF report for this month"
 ];
 
+function convertNumberToWords(numStr: string): string {
+  const num = parseInt(numStr.replace(/,/g, ''), 10);
+  if (isNaN(num)) return numStr;
+  if (num === 0) return 'zero';
+
+  const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 
+                 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+  const scales = ['', 'thousand', 'million', 'billion'];
+
+  let words = '';
+  let numVal = num;
+  let scaleIdx = 0;
+
+  while (numVal > 0) {
+    const chunk = numVal % 1000;
+    if (chunk > 0) {
+      let chunkWords = '';
+      const hundreds = Math.floor(chunk / 100);
+      const remainder = chunk % 100;
+      if (hundreds > 0) {
+        chunkWords += ones[hundreds] + ' hundred ';
+      }
+      if (remainder > 0) {
+        if (remainder < 20) {
+          chunkWords += ones[remainder];
+        } else {
+          chunkWords += tens[Math.floor(remainder / 10)] + (remainder % 10 > 0 ? ' ' + ones[remainder % 10] : '');
+        }
+      }
+      words = chunkWords.trim() + ' ' + scales[scaleIdx] + ' ' + words;
+    }
+    numVal = Math.floor(numVal / 1000);
+    scaleIdx++;
+  }
+  return words.trim();
+}
+
 function cleanTextForSpeech(text: string): string {
   if (!text) return '';
 
@@ -26,47 +64,90 @@ function cleanTextForSpeech(text: string): string {
   // 1. Remove markdown links: [label](url) -> label
   clean = clean.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
 
-  // 2. Remove markdown formatting markers (*, _, `, #)
-  clean = clean.replace(/[\*\`\#\_]/g, '');
+  // 2. Remove markdown bold/italic/code/header markers
+  clean = clean.replace(/\*\*([^*]+)\*\*/g, '$1'); // bold
+  clean = clean.replace(/\*([^*]+)\*/g, '$1');      // italic
+  clean = clean.replace(/`([^`]+)`/g, '$1');        // inline code
+  clean = clean.replace(/#{1,6}\s*/g, '');          // headers
+  clean = clean.replace(/_{1,2}([^_]+)_{1,2}/g, '$1'); // underscores
 
-  // 3. Clean up list bullets/numbers at the start of lines
-  clean = clean.split('\n')
-    .map(line => {
-      let trimmed = line.trim();
-      trimmed = trimmed.replace(/^[\-\*\+]\s+/, '');
-      trimmed = trimmed.replace(/^\d+\.\s+/, '');
-      return trimmed;
-    })
-    .filter(line => line.length > 0)
-    .join('. '); // Join lines with a period to enforce natural pauses between sentences/lists
+  // 3. Remove markdown table separators and pipes
+  clean = clean.replace(/\|/g, ' ');
+  clean = clean.replace(/[\=\-]{3,}/g, ' ');
 
-  // 4. Replace currency symbols with spoken words
-  clean = clean.replace(/৳/g, ' Taka ');
-  clean = clean.replace(/\$/g, ' dollars ');
-  clean = clean.replace(/€/g, ' euros ');
-  clean = clean.replace(/£/g, ' pounds ');
+  // 4. Convert currency symbols to words
+  clean = clean.replace(/৳\s*(\d[\d,\.]*)/g, (_, num) => numberToSpeech(num) + ' taka');
+  clean = clean.replace(/\$\s*(\d[\d,\.]*)/g, (_, num) => numberToSpeech(num) + ' dollars');
+  clean = clean.replace(/€\s*(\d[\d,\.]*)/g, (_, num) => numberToSpeech(num) + ' euros');
+  clean = clean.replace(/£\s*(\d[\d,\.]*)/g, (_, num) => numberToSpeech(num) + ' pounds');
 
-  // 5. Replace slashes between words with " or " to avoid TTS reading "slash"
-  clean = clean.replace(/(\w+)\/(\w+)/g, '$1 or $2');
-  clean = clean.replace(/\s*\/\s*/g, ' or ');
+  // 5. Handle list bullets — convert bullets to natural sentence breaks with a pause
+  clean = clean.split('\n').map(line => {
+    let trimmed = line.trim();
+    // numbered list item: "1. something" -> "something"
+    trimmed = trimmed.replace(/^\d+\.\s+/, '');
+    // bullet list item: "- something" or "* something" -> "something"
+    trimmed = trimmed.replace(/^[\-\*\+]\s+/, '');
+    return trimmed;
+  }).filter(line => line.length > 0).join('. ');
 
   // 6. Clean up trailing ".0" in numbers (e.g. "100.0" -> "100")
   clean = clean.replace(/(\d+)\.0\b/g, '$1');
 
-  // 7. Remove literal "undefined" or "null" leaked from code
+  // 7. Convert standalone percentages
+  clean = clean.replace(/(\d+(?:\.\d+)?)%/g, (_, num) => numberToSpeech(num) + ' percent');
+
+  // 8. Convert remaining numbers to words (integers and decimals)
+  clean = clean.replace(/\b(\d{1,3}(?:,\d{3})*)(\.\d+)?\b/g, (match, intPart, decPart) => {
+    const spoken = convertNumberToWords(intPart);
+    if (decPart) {
+      // e.g. ".50" -> "point fifty" or decimal digits individually
+      const decDigits = decPart.replace('.', '');
+      const decNum = parseInt(decDigits, 10);
+      if (!isNaN(decNum) && decNum > 0) {
+        return `${spoken} point ${convertNumberToWords(decDigits)}`;
+      }
+      return spoken;
+    }
+    return spoken;
+  });
+
+  // 9. Remove slashes between words
+  clean = clean.replace(/(\w+)\/(\w+)/g, '$1 or $2');
+  clean = clean.replace(/\s*\/\s*/g, ' or ');
+
+  // 10. Remove "undefined" or "null" leaks
   clean = clean.replace(/\bundefined\b/gi, '');
   clean = clean.replace(/\bnull\b/gi, '');
 
-  // 8. Remove table separators, pipes, equals
-  clean = clean.replace(/\|/g, ' ');
-  clean = clean.replace(/[\=\-]{3,}/g, ' ');
+  // 11. Replace em-dashes and en-dashes with a natural pause
+  clean = clean.replace(/[\u2013\u2014]/g, ', ');
 
-  // 9. General cleanup of multiple spaces/periods
+  // 12. Replace colons in the middle of a sentence with a comma (sounds more natural)
+  clean = clean.replace(/:\s*/g, ', ');
+
+  // 13. General cleanup — multiple spaces/periods
   clean = clean.replace(/\.{2,}/g, '.');
+  clean = clean.replace(/,+/g, ',');
   clean = clean.replace(/\s+/g, ' ');
+  clean = clean.replace(/,\s*\./g, '.');
 
   return clean.trim();
 }
+
+function numberToSpeech(numStr: string): string {
+  const cleaned = numStr.replace(/,/g, '');
+  const parts = cleaned.split('.');
+  const intWords = convertNumberToWords(parts[0]);
+  if (parts[1]) {
+    const decNum = parseInt(parts[1], 10);
+    if (!isNaN(decNum) && decNum > 0) {
+      return `${intWords} point ${convertNumberToWords(parts[1])}`;
+    }
+  }
+  return intWords;
+}
+
 
 // Word-by-word reveal component with simple markdown parsing for natural typing look
 function NaturalMessageRenderer({ text, isNew }: { text: string; isNew: boolean }) {
@@ -246,7 +327,8 @@ export default function FloatingChatbot() {
         };
 
         rec.onresult = async (event: any) => {
-          if (currentStatusRef.current !== 'listening' && currentStatusRef.current !== 'speaking') return;
+          // Only process results when actively listening (mic is off during speaking/thinking)
+          if (currentStatusRef.current !== 'listening') return;
           
           const lastIndex = event.results.length - 1;
           const text = event.results[lastIndex][0].transcript.trim();
@@ -254,83 +336,43 @@ export default function FloatingChatbot() {
 
           const textLower = text.toLowerCase();
 
-          // 1. Catch "stop" commands synchronously
+          // Catch "stop" commands
           const stopWords = ['stop', 'stop talking', 'be quiet', 'shut up', 'pause'];
-          if (stopWords.some(word => textLower === word || textLower.startsWith(word))) {
+          if (stopWords.some(word => textLower === word || textLower.startsWith(word + ' '))) {
             interruptSpeaking();
             return;
           }
 
-          // 2. Filter out AI self-echo (ignoring when AI records itself speaking)
-          if (currentStatusRef.current === 'speaking') {
-            const aiText = currentReplyRef.current.toLowerCase();
-            if (aiText.includes(textLower) || textLower.includes(aiText) || textLower.length < 4) {
-              return;
-            }
-          }
+          // User spoke — process as new query
+          updateVoiceStatus('thinking');
+          // Stop mic while processing so it doesn't pick up anything else
+          try { recognitionRef.current?.stop(); } catch (e) {}
 
-          // 3. User spoke a new prompt
-          if (currentStatusRef.current === 'speaking' || currentStatusRef.current === 'listening') {
-            interruptSpeaking(); // Interrupt speech
-            updateVoiceStatus('thinking');
-
-            // Strip any leading AI self-echo that got recorded at the beginning of the transcription
-            let cleanQuery = text;
-            const lastAiReply = currentReplyRef.current;
-            if (lastAiReply) {
-              const normalizedText = text.toLowerCase();
-              const normalizedAi = lastAiReply.toLowerCase().replace(/[\*\`\#\_]/g, '').replace(/[\r\n]+/g, ' ').trim();
-              
-              if (normalizedText.startsWith(normalizedAi)) {
-                cleanQuery = text.substring(lastAiReply.length).trim();
-              } else {
-                const words = normalizedAi.split(/\s+/).filter(w => w.length > 2);
-                if (words.length > 3) {
-                  const searchStr = words.slice(0, 4).join(' ');
-                  const idx = normalizedText.indexOf(searchStr);
-                  if (idx >= 0 && idx < 30) {
-                    const lastWord = words[words.length - 1];
-                    const endIdx = normalizedText.indexOf(lastWord, idx);
-                    if (endIdx >= 0) {
-                      cleanQuery = text.substring(endIdx + lastWord.length).trim();
-                    } else {
-                      cleanQuery = text.substring(idx + searchStr.length).trim();
-                    }
-                  }
-                }
-              }
-            }
-
-            cleanQuery = cleanQuery.replace(/^[^a-zA-Z0-9]+/, '').trim();
-            if (!cleanQuery) {
-              updateVoiceStatus('listening');
-              return;
-            }
-
-            const newUserMsg: Message = { role: 'user', content: `[Voice] ${cleanQuery}` };
+            const newUserMsg: Message = { role: 'user', content: `[Voice] ${text}` };
             const updatedMessages = [...messagesRef.current, newUserMsg];
             setMessages(updatedMessages);
 
             try {
               const history = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
               const response = await api.post('/ai/chat/', {
-                message: cleanQuery,
+                message: text,
                 history: history,
               });
 
               const reply = response.data.reply;
               setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
 
-              // Speak response
+              // speak() will stop mic before playing and restart it after
               speak(reply);
             } catch (error) {
               updateVoiceStatus('idle');
               setIsVoiceActive(false);
             }
-          }
-        };
+          };
+
 
         rec.onerror = (e: any) => {
+          // Only auto-restart on recoverable errors while actively listening
           if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
             setTimeout(() => {
               if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
@@ -341,10 +383,10 @@ export default function FloatingChatbot() {
         };
 
         rec.onend = () => {
-          // Restart loop if voice active with safety timeout
-          if (isVoiceActiveRef.current) {
+          // Only restart if we're actively in listening state (not thinking/speaking)
+          if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
             setTimeout(() => {
-              if (isVoiceActiveRef.current) {
+              if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
                 try {
                   rec.start();
                 } catch (e) {}
@@ -392,38 +434,97 @@ export default function FloatingChatbot() {
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
 
-      audio.onended = () => {
+      // STOP microphone before playing to prevent self-echo
+      try { recognitionRef.current?.stop(); } catch (e) {}
+
+      const restartMicAfterSpeaking = () => {
         audioRef.current = null;
         if (isVoiceActiveRef.current) {
           updateVoiceStatus('listening');
+          // Small delay so mic doesn't catch the last audio fade
+          setTimeout(() => {
+            if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
+              try { recognitionRef.current?.start(); } catch (e) {}
+            }
+          }, 400);
         } else {
           updateVoiceStatus('idle');
         }
       };
 
+      audio.onended = () => {
+        restartMicAfterSpeaking();
+      };
+
       audio.onerror = () => {
-        audioRef.current = null;
-        if (isVoiceActiveRef.current) {
-          updateVoiceStatus('listening');
-        } else {
-          updateVoiceStatus('idle');
-        }
+        restartMicAfterSpeaking();
       };
 
       audio.play().catch((err) => {
         console.error("Audio playback error:", err);
+        restartMicAfterSpeaking();
+      });
+    } catch (error: any) {
+      console.warn("TTS generation error, falling back to Web Speech API:", error?.message || error);
+      // Also stop mic for Web Speech API fallback
+      try { recognitionRef.current?.stop(); } catch (e) {}
+
+      const restartMicAfterFallback = () => {
         if (isVoiceActiveRef.current) {
           updateVoiceStatus('listening');
+          setTimeout(() => {
+            if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
+              try { recognitionRef.current?.start(); } catch (e) {}
+            }
+          }, 400);
         } else {
           updateVoiceStatus('idle');
         }
-      });
-    } catch (error) {
-      console.error("TTS generation error:", error);
-      if (isVoiceActiveRef.current) {
-        updateVoiceStatus('listening');
-      } else {
-        updateVoiceStatus('idle');
+      };
+
+      try {
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        // Pick the best available natural-sounding female English voice
+        const pickFemaleVoice = () => {
+          const voices = window.speechSynthesis.getVoices();
+          const preferred = [
+            (v: SpeechSynthesisVoice) => v.name === 'Google UK English Female',
+            (v: SpeechSynthesisVoice) => v.name === 'Google US English Female',
+            (v: SpeechSynthesisVoice) => v.lang.startsWith('en') && v.name.toLowerCase().includes('female'),
+            (v: SpeechSynthesisVoice) => v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'),
+            (v: SpeechSynthesisVoice) => v.lang.startsWith('en'),
+          ];
+          for (const fn of preferred) {
+            const match = voices.find(fn);
+            if (match) return match;
+          }
+          return null;
+        };
+
+        const setVoiceAndSpeak = () => {
+          const voice = pickFemaleVoice();
+          if (voice) utterance.voice = voice;
+          utterance.rate = 0.92;
+          utterance.pitch = 1.05;
+          utterance.volume = 1.0;
+          window.speechSynthesis.speak(utterance);
+        };
+
+        utterance.onend = () => restartMicAfterFallback();
+        utterance.onerror = () => restartMicAfterFallback();
+
+        if (window.speechSynthesis.getVoices().length === 0) {
+          window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.onvoiceschanged = null;
+            setVoiceAndSpeak();
+          };
+        } else {
+          setVoiceAndSpeak();
+        }
+      } catch (e: any) {
+        console.warn("Web Speech API fallback failed:", e?.message || e);
+        restartMicAfterFallback();
       }
     }
   };
@@ -434,6 +535,11 @@ export default function FloatingChatbot() {
         audioRef.current.pause();
       } catch (e) {}
       audioRef.current = null;
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
     }
     if (isVoiceActiveRef.current) {
       updateVoiceStatus('listening');

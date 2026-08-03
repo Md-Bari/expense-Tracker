@@ -18,14 +18,15 @@ class DashboardSummaryView(APIView):
         today = datetime.date.today()
         this_month_start = today.replace(day=1)
 
-        # 1. Summary Metrics (This Month)
-        tx_this_month = Transaction.objects.filter(user=user, date__gte=this_month_start, date__lte=today)
-        total_income = float(tx_this_month.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0.0)
-        total_expense = float(tx_this_month.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0.0)
+        # 1. Summary Metrics (All-Time Totals)
+        all_tx = Transaction.objects.filter(user=user)
+        total_income = float(all_tx.filter(type='income').aggregate(Sum('amount'))['amount__sum'] or 0.0)
+        total_expense = float(all_tx.filter(type='expense').aggregate(Sum('amount'))['amount__sum'] or 0.0)
         net_balance = total_income - total_expense
         savings_rate = (net_balance / total_income * 100) if total_income > 0 else 0.0
 
         # 2. Category breakdown (This Month)
+        tx_this_month = Transaction.objects.filter(user=user, date__gte=this_month_start, date__lte=today)
         category_breakdown = tx_this_month.filter(type='expense').values(
             'category__name', 'category__color', 'category__icon'
         ).annotate(value=Sum('amount')).order_by('-value')
