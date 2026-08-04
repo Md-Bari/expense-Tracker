@@ -1,6 +1,6 @@
 from rest_framework import serializers
 # pyrefly: ignore [missing-import]
-from .models import Category, Transaction
+from .models import Category, Transaction, ExpenseSheet
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -61,3 +61,16 @@ class TransactionSerializer(serializers.ModelSerializer):
             from budgets.utils import check_budget_alerts
             check_budget_alerts(instance.user, instance.category, instance.date)
         return instance
+
+
+class ExpenseSheetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExpenseSheet
+        fields = ('id', 'title', 'description', 'items', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_at', 'updated_at')
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if request and request.user:
+            validated_data['user'] = request.user
+        return super().create(validated_data)

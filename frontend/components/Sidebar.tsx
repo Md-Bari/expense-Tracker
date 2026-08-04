@@ -8,6 +8,7 @@ import { api } from '@/services/api';
 import {
   LayoutDashboard,
   ArrowLeftRight,
+  FileSpreadsheet,
   PieChart,
   Target,
   FileText,
@@ -69,6 +70,7 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Transactions', href: '/transactions', icon: ArrowLeftRight },
+    { name: 'Expense Sheets', href: '/sheets', icon: FileSpreadsheet },
     { name: 'Budgets', href: '/budgets', icon: PieChart },
     { name: 'Savings Goals', href: '/goals', icon: Target },
     { name: 'PDF Reports', href: '/reports', icon: FileText },

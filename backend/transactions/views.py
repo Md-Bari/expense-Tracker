@@ -1,10 +1,11 @@
 from django.db.models import Q
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 # pyrefly: ignore [missing-import]
-from .models import Category, Transaction
+from .models import Category, Transaction, ExpenseSheet
 # pyrefly: ignore [missing-import]
-from .serializers import CategorySerializer, TransactionSerializer
+from .serializers import CategorySerializer, TransactionSerializer, ExpenseSheetSerializer
 
 class TransactionPagination(PageNumberPagination):
     page_size = 10
@@ -80,3 +81,57 @@ class TransactionViewSet(viewsets.ModelViewSet):
             )
 
         return queryset
+
+
+class ExpenseSheetViewSet(viewsets.ModelViewSet):
+    serializer_class = ExpenseSheetSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ExpenseSheet.objects.filter(user=self.request.user)
+
+    def get_permissions(self):
+        # We need action decorator and response imports
+        return super().get_permissions()
+
+    @action(detail=True, methods=['post'])
+    def commit_to_transactions(self, request, pk=None):
+        from rest_framework.response import Response
+        from rest_framework import status
+        import decimal
+        import datetime
+
+        sheet = self.get_object()
+        items = sheet.items or []
+        if not items:
+            return Response({'error': 'The expense sheet has no items to commit.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        created_count = 0
+        for item in items:
+            category_name = item.get('category') or 'Other'
+            category = Category.objects.filter(
+                Q(owner=request.user) | Q(owner__isnull=True),
+                name__iexact=category_name,
+                type='expense'
+            ).first()
+            if not category:
+                category = Category.objects.filter(owner__isnull=True, name='Other', type='expense').first()
+
+            Transaction.objects.create(
+                user=request.user,
+                category=category,
+                type='expense',
+                amount=decimal.Decimal(str(item.get('amount', 0.0))),
+                date=item.get('date') or str(datetime.date.today()),
+                description=item.get('description') or ''
+            )
+            created_count += 1
+
+        # Clear items on successful commit
+        sheet.items = []
+        sheet.save()
+
+        return Response({
+            'message': f"Successfully committed {created_count} items from sheet '{sheet.title}' to transactions.",
+            'sheet': ExpenseSheetSerializer(sheet).data
+        }, status=status.HTTP_200_OK)

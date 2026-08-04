@@ -17,6 +17,8 @@ from .tools.forecast import forecast_next_month_expenses
 from .tools.pdf import trigger_report_generation
 # pyrefly: ignore [missing-import]
 from .tools.mutation_tools import create_transaction_tool, create_savings_goal_tool, create_budget_tool
+# pyrefly: ignore [missing-import]
+from .tools.sheet_tools import manage_expense_sheet_tool
 
 User = get_user_model()
 
@@ -49,11 +51,12 @@ Available Intents:
 5. "create_transaction": When the user explicitly wants to add, record, or create a transaction (e.g., "Add expense of 500 for Food today", "I earned 12000 from freelance writing").
 6. "create_savings_goal": When the user explicitly wants to create a new savings goal target (e.g., "Create a savings goal of 50000 for a new laptop by December 31st").
 7. "create_budget": When the user explicitly wants to create a new budget (e.g., "Create a budget of 2000 for Food this month", "add total budget of 50000").
-8. "general": Asking for generic budgeting tips, savings advice, or greeting.
+8. "expense_sheet": When the user wants to create, view, add items to, edit, or delete items from an expense sheet (e.g., "Create an expense sheet", "Add lunch 200 to my expense sheet", "Show my expense sheet", "Remove item 3 from the sheet").
+9. "general": Asking for generic budgeting tips, savings advice, or greeting.
 
 Output JSON ONLY format:
 {
-  "intent": "sql" | "analytics" | "forecast" | "pdf" | "create_transaction" | "create_savings_goal" | "create_budget" | "general",
+  "intent": "sql" | "analytics" | "forecast" | "pdf" | "create_transaction" | "create_savings_goal" | "create_budget" | "expense_sheet" | "general",
   "parameters": {
      "amount": float | null,
      "type": "income" | "expense" | null,
@@ -67,13 +70,17 @@ Output JSON ONLY format:
      "end_date": "YYYY-MM-DD" | null,
      "transaction_type": "income" | "expense" | null,
      "aggregate": "sum" | "avg" | "count" | null,
-     "group_by": "category" | "month" | null
+     "group_by": "category" | "month" | null,
+     "action": "create" | "add_item" | "delete_item" | "update_item" | "view" | "list" | null,
+     "sheet_id": int | null,
+     "item_id": int | null,
+     "title": string | null
   }
 }
 
-Use YYYY-MM-DD for dates. Assume current date is 2026-08-02.
-If user asks about "this week", compute start_date as 2026-07-27 (Monday) to 2026-08-02.
-If user asks about "this month", compute start_date as 2026-08-01 to 2026-08-02.
+Use YYYY-MM-DD for dates. Assume current date is 2026-08-04.
+If user asks about "this week", compute start_date as 2026-07-28 (Monday) to 2026-08-03.
+If user asks about "this month", compute start_date as 2026-08-01 to 2026-08-04.
 """
 
     messages = [
@@ -147,6 +154,8 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
             result = create_savings_goal_tool(user, params)
         elif intent == 'create_budget':
             result = create_budget_tool(user, params)
+        elif intent == 'expense_sheet':
+            result = manage_expense_sheet_tool(user, params, state['current_query'])
         else:
             result = "No tool execution needed."
     except Exception as e:
@@ -226,14 +235,11 @@ Core Personality Rules:
    - 85% → "eighty five percent"
 4. Currency: Use "{currency}" context. When spelling out amounts, say "taka" for BDT (e.g., "seventeen thousand taka").
 5. If the user greets you, respond with ONLY a brief, natural warm greeting (1-2 sentences max). Do NOT list any financial data in a greeting.
-6. If the user asks a financial question, give an ELABORATE, DETAILED response:
-   - First, describe what you found in their data with warmth and specificity.
-   - Then give your analysis — what the numbers mean for them.
-   - Then provide organized, actionable suggestions in a clear numbered or bulleted structure, prefixed with something like "Here are my suggestions for you:"
+6. Keep your responses concise, direct, and conversational. Do NOT give a massive structured list of suggestions or data breakdowns unless the user explicitly asks for recommendations, detailed analysis, or lists. Simply answer the user's specific query or statement directly in a few natural sentences (2-4 sentences max).
 7. Never introduce yourself mid-conversation. Just answer naturally.
-8. If no data is available, gently explain they haven't recorded anything yet and encourage them to start.
-9. Use natural speech transitions: "So here's what I found...", "Now the good news is...", "Something worth noting is...", "I'd suggest...", "Here's what I'd recommend..."
-10. Keep responses warm, encouraging, and human. Celebrate wins, gently highlight risks.
+8. If the user asks for guidance or advice and no data is available in context, gently explain they haven't recorded anything yet, but don't force a long explanation.
+9. Use natural speech transitions like "So," "Now," "I'd recommend," but only when it sounds conversational and fits the context.
+10. Keep responses warm, encouraging, and human. If the user is in a difficult situation, show genuine empathy and give a brief, supportive, and direct response.
 
 Formatting:
 - Use markdown bullet points or numbered lists only for suggestions/recommendations sections.

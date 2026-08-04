@@ -94,7 +94,7 @@ function cleanTextForSpeech(text: string): string {
     const intPart = convertNumberToWords(g1);
     if (g3) {
       const decDigits = g3.replace('.', '').split('');
-      const decPart = decDigits.map(digit => {
+      const decPart = decDigits.map((digit: string) => {
         const d = parseInt(digit, 10);
         return isNaN(d) ? '' : convertNumberToWords(digit);
       }).join(' ');
@@ -231,7 +231,10 @@ export default function AIChatPage() {
         };
 
         rec.onresult = async (event: any) => {
-          if (currentStatusRef.current !== 'listening' && currentStatusRef.current !== 'speaking') return;
+          // ONLY process input when we are actively listening
+          // This prevents self-echo: recognition is stopped during speaking,
+          // but as a safety net, also reject anything not in 'listening' state
+          if (currentStatusRef.current !== 'listening') return;
 
           const lastIndex = event.results.length - 1;
           const text = event.results[lastIndex][0].transcript.trim();
@@ -239,65 +242,26 @@ export default function AIChatPage() {
 
           const textLower = text.toLowerCase();
 
-          // Stop commands
+          // Stop commands (allow even during edge cases)
           const stopWords = ['stop', 'stop talking', 'be quiet', 'shut up', 'pause'];
           if (stopWords.some(word => textLower === word || textLower.startsWith(word))) {
             interruptSpeaking();
             return;
           }
 
-          // Echo cancellation
-          if (currentStatusRef.current === 'speaking') {
-            const aiText = currentReplyRef.current.toLowerCase();
-            if (aiText.includes(textLower) || textLower.includes(aiText) || textLower.length < 4) {
-              return;
-            }
-          }
+          // Stop recognition while we process the query
+          try { rec.stop(); } catch (e) {}
 
-          // Strip any leading AI self-echo that got recorded at the beginning of the transcription
-          let cleanQuery = text;
-          const lastAiReply = currentReplyRef.current;
-          if (lastAiReply) {
-            const normalizedText = text.toLowerCase();
-            const normalizedAi = lastAiReply.toLowerCase().replace(/[\*\`\#\_]/g, '').replace(/[\r\n]+/g, ' ').trim();
-            
-            if (normalizedText.startsWith(normalizedAi)) {
-              cleanQuery = text.substring(lastAiReply.length).trim();
-            } else {
-              const words = normalizedAi.split(/\s+/).filter(w => w.length > 2);
-              if (words.length > 3) {
-                const searchStr = words.slice(0, 4).join(' ');
-                const idx = normalizedText.indexOf(searchStr);
-                if (idx >= 0 && idx < 30) {
-                  const lastWord = words[words.length - 1];
-                  const endIdx = normalizedText.indexOf(lastWord, idx);
-                  if (endIdx >= 0) {
-                    cleanQuery = text.substring(endIdx + lastWord.length).trim();
-                  } else {
-                    cleanQuery = text.substring(idx + searchStr.length).trim();
-                  }
-                }
-              }
-            }
-          }
-
-          cleanQuery = cleanQuery.replace(/^[^a-zA-Z0-9]+/, '').trim();
-          if (!cleanQuery) {
-            updateVoiceStatus('listening');
-            return;
-          }
-
-          interruptSpeaking();
           updateVoiceStatus('thinking');
 
-          const newUserMsg: Message = { role: 'user', content: `[Voice] ${cleanQuery}` };
+          const newUserMsg: Message = { role: 'user', content: `[Voice] ${text}` };
           const updatedMessages = [...messagesRef.current, newUserMsg];
           setMessages(updatedMessages);
 
           try {
             const history = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
             const response = await api.post('/ai/chat/', {
-              message: cleanQuery,
+              message: text,
               history: history,
             });
 
@@ -314,8 +278,9 @@ export default function AIChatPage() {
 
             speak(reply);
           } catch (error) {
-            updateVoiceStatus('idle');
-            setIsVoiceActive(false);
+            updateVoiceStatus('listening');
+            // Restart recognition after error
+            try { rec.start(); } catch (e) {}
           }
         };
 
@@ -330,9 +295,11 @@ export default function AIChatPage() {
         };
 
         rec.onend = () => {
-          if (isVoiceActiveRef.current) {
+          // Only auto-restart if we're supposed to be listening
+          // Do NOT restart during 'speaking' or 'thinking' states
+          if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
             setTimeout(() => {
-              if (isVoiceActiveRef.current) {
+              if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
                 try {
                   rec.start();
                 } catch (e) {}
@@ -373,6 +340,11 @@ export default function AIChatPage() {
 
     updateVoiceStatus('speaking');
 
+    // STOP recognition while speaking to prevent self-echo
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (e) {}
+    }
+
     try {
       const response = await api.post('/ai/tts/', { text: cleanText }, { responseType: 'blob' });
       const blob = response.data;
@@ -384,6 +356,10 @@ export default function AIChatPage() {
         audioRef.current = null;
         if (isVoiceActiveRef.current) {
           updateVoiceStatus('listening');
+          // Restart recognition after speaking finishes
+          if (recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) {}
+          }
         } else {
           updateVoiceStatus('idle');
         }
@@ -393,6 +369,9 @@ export default function AIChatPage() {
         audioRef.current = null;
         if (isVoiceActiveRef.current) {
           updateVoiceStatus('listening');
+          if (recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) {}
+          }
         } else {
           updateVoiceStatus('idle');
         }
@@ -402,6 +381,9 @@ export default function AIChatPage() {
         console.error("Audio playback error:", err);
         if (isVoiceActiveRef.current) {
           updateVoiceStatus('listening');
+          if (recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) {}
+          }
         } else {
           updateVoiceStatus('idle');
         }
@@ -413,6 +395,9 @@ export default function AIChatPage() {
         utterance.onend = () => {
           if (isVoiceActiveRef.current) {
             updateVoiceStatus('listening');
+            if (recognitionRef.current) {
+              try { recognitionRef.current.start(); } catch (e) {}
+            }
           } else {
             updateVoiceStatus('idle');
           }
@@ -420,6 +405,9 @@ export default function AIChatPage() {
         utterance.onerror = () => {
           if (isVoiceActiveRef.current) {
             updateVoiceStatus('listening');
+            if (recognitionRef.current) {
+              try { recognitionRef.current.start(); } catch (e) {}
+            }
           } else {
             updateVoiceStatus('idle');
           }
@@ -429,6 +417,9 @@ export default function AIChatPage() {
         console.warn("Web Speech API fallback failed:", e?.message || e);
         if (isVoiceActiveRef.current) {
           updateVoiceStatus('listening');
+          if (recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e2) {}
+          }
         } else {
           updateVoiceStatus('idle');
         }
@@ -450,6 +441,10 @@ export default function AIChatPage() {
     }
     if (isVoiceActiveRef.current) {
       updateVoiceStatus('listening');
+      // Restart recognition after interrupting
+      if (recognitionRef.current) {
+        try { recognitionRef.current.start(); } catch (e) {}
+      }
     } else {
       updateVoiceStatus('idle');
     }
