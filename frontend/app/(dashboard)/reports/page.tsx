@@ -87,7 +87,7 @@ export default function ReportsPage() {
     if (!filePath) return '#';
     // If it's a relative media URL, append domain
     if (filePath.startsWith('http')) return filePath;
-    const base = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8007';
+    const base = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'https://healthy-thumbzilla-veterinary-witnesses.trycloudflare.com';
     return `${base}${filePath}`;
   };
 

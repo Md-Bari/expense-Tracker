@@ -73,12 +73,16 @@ class DashboardSummaryView(APIView):
             limit = float(b.amount)
             pct = (spent / limit * 100) if limit > 0 else 0
             
+            computed_st = 'completed' if b.status == 'completed' else ('exceeded' if pct >= 100 else 'active')
+            
             budgets_data.append({
                 'id': b.id,
                 'category': b.category.name if b.category else 'Total Budget',
                 'limit': limit,
                 'spent': spent,
-                'percentage': round(pct, 2)
+                'percentage': round(pct, 2),
+                'status': b.status,
+                'computed_status': computed_st,
             })
 
         # 5. Active Savings Goals

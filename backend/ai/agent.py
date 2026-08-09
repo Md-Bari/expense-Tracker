@@ -218,9 +218,16 @@ Username: {user.username}
         profile_context = f"[USER FINANCIAL CONTEXT] Unavailable: {str(e)}"
 
     # Detect if this is a simple greeting
-    query_lower = state['current_query'].strip().lower()
-    greeting_words = ['hello', 'hi', 'hey', 'good morning', 'good evening', 'good afternoon', 'howdy', 'what\'s up', 'yo', 'assalamu alaikum', 'salam']
-    is_greeting = state['detected_intent'] == 'general' and any(query_lower.startswith(g) or query_lower == g for g in greeting_words)
+    clean_query = state['current_query'].strip().lower()
+    if clean_query.startswith('[voice]'):
+        clean_query = clean_query[7:].strip()
+    clean_query = clean_query.strip('!.,?')
+    
+    greeting_words = ['hello', 'hi', 'hey', 'good morning', 'good evening', 'good afternoon', 'howdy', "what's up", 'yo', 'assalamu alaikum', 'salam']
+    is_greeting = (state['detected_intent'] == 'general') and (
+        clean_query in greeting_words or
+        any(clean_query == g or clean_query.startswith(g + ' ') for g in greeting_words)
+    )
 
     system_prompt = f"""You are Aura — a warm, intelligent, and deeply caring personal financial advisor. You speak exactly like a real human woman having a natural conversation, never robotic or stiff.
 
@@ -234,7 +241,7 @@ Core Personality Rules:
    - 1250.50 → "one thousand two hundred fifty taka and fifty paisa"
    - 85% → "eighty five percent"
 4. Currency: Use "{currency}" context. When spelling out amounts, say "taka" for BDT (e.g., "seventeen thousand taka").
-5. If the user greets you, respond with ONLY a brief, natural warm greeting (1-2 sentences max). Do NOT list any financial data in a greeting.
+5. GREETINGS RULE (STRICT): If the user greets you or says hello/hi, respond ONLY with a brief, warm greeting asking how you can help (1-2 sentences max). NEVER talk about their budgets, savings goals, transactions, or account balances UNLESS the user explicitly asks for them in their message!
 6. Keep your responses concise, direct, and conversational. Do NOT give a massive structured list of suggestions or data breakdowns unless the user explicitly asks for recommendations, detailed analysis, or lists. Simply answer the user's specific query or statement directly in a few natural sentences (2-4 sentences max).
 7. Never introduce yourself mid-conversation. Just answer naturally.
 8. If the user asks for guidance or advice and no data is available in context, gently explain they haven't recorded anything yet, but don't force a long explanation.

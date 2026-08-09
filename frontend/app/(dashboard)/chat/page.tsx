@@ -8,6 +8,7 @@ import { api } from '@/services/api';
 import { motion } from 'framer-motion';
 import { Send, Bot, User, RefreshCw, BarChart3, PieChart as PieIcon, LineChart, Mic } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart as RechartsLineChart, Line } from 'recharts';
+import ThreeDVoiceOrb from '@/components/ThreeDVoiceOrb';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -189,6 +190,8 @@ export default function AIChatPage() {
   const isVoiceActiveRef = useRef<boolean>(isVoiceActive);
   const currentStatusRef = useRef<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
   const currentReplyRef = useRef<string>('');
+  const isSpeakingRef = useRef<boolean>(false);
+  const lastSpokenTextRef = useRef<string>('');
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -227,14 +230,14 @@ export default function AIChatPage() {
         rec.maxAlternatives = 1;
 
         rec.onstart = () => {
-          updateVoiceStatus('listening');
+          if (!isSpeakingRef.current) {
+            updateVoiceStatus('listening');
+          }
         };
 
         rec.onresult = async (event: any) => {
-          // ONLY process input when we are actively listening
-          // This prevents self-echo: recognition is stopped during speaking,
-          // but as a safety net, also reject anything not in 'listening' state
-          if (currentStatusRef.current !== 'listening') return;
+          // Immediately reject any recognition while assistant is speaking or not listening
+          if (isSpeakingRef.current || currentStatusRef.current !== 'listening') return;
 
           const lastIndex = event.results.length - 1;
           const text = event.results[lastIndex][0].transcript.trim();
@@ -249,12 +252,21 @@ export default function AIChatPage() {
             return;
           }
 
-          // Stop recognition while we process the query
-          try { rec.stop(); } catch (e) {}
+          // Self-echo filtering check: reject transcript if it matches what assistant just spoke
+          if (lastSpokenTextRef.current && (
+            lastSpokenTextRef.current.includes(textLower) ||
+            (textLower.length > 10 && lastSpokenTextRef.current.slice(0, 40).includes(textLower.slice(0, 20)))
+          )) {
+            console.log("Self-echo speech ignored:", text);
+            return;
+          }
+
+          // Immediately abort mic to dump audio buffer while processing query
+          try { rec.abort(); } catch (e) {}
 
           updateVoiceStatus('thinking');
 
-          const newUserMsg: Message = { role: 'user', content: `[Voice] ${text}` };
+          const newUserMsg: Message = { role: 'user', content: text };
           const updatedMessages = [...messagesRef.current, newUserMsg];
           setMessages(updatedMessages);
 
@@ -279,33 +291,32 @@ export default function AIChatPage() {
             speak(reply);
           } catch (error) {
             updateVoiceStatus('listening');
-            // Restart recognition after error
             try { rec.start(); } catch (e) {}
           }
         };
 
         rec.onerror = () => {
-          if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
+          if (!isSpeakingRef.current && isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
             setTimeout(() => {
-              if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
+              if (!isSpeakingRef.current && isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
                 try { rec.start(); } catch (err) {}
               }
-            }, 300);
+            }, 400);
           }
         };
 
         rec.onend = () => {
-          // Only auto-restart if we're supposed to be listening
-          // Do NOT restart during 'speaking' or 'thinking' states
-          if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
-            setTimeout(() => {
-              if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
-                try {
-                  rec.start();
-                } catch (e) {}
-              }
-            }, 300);
+          // Do NOT auto-restart mic while speaking or thinking
+          if (isSpeakingRef.current || !isVoiceActiveRef.current || currentStatusRef.current !== 'listening') {
+            return;
           }
+          setTimeout(() => {
+            if (!isSpeakingRef.current && isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
+              try {
+                rec.start();
+              } catch (e) {}
+            }
+          }, 400);
         };
 
         recognitionRef.current = rec;
@@ -316,12 +327,14 @@ export default function AIChatPage() {
   const speak = async (text: string) => {
     if (typeof window === 'undefined') return;
 
-    // Cache the spoken text to filter out self-recordings
+    isSpeakingRef.current = true;
     currentReplyRef.current = text;
 
     const cleanText = cleanTextForSpeech(text);
+    lastSpokenTextRef.current = cleanText.toLowerCase();
     
     if (!cleanText) {
+      isSpeakingRef.current = false;
       if (isVoiceActiveRef.current) {
         updateVoiceStatus('listening');
       } else {
@@ -330,20 +343,32 @@ export default function AIChatPage() {
       return;
     }
 
-    // Stop any currently playing audio
+    // Stop playing audio and IMMEDIATELY abort mic session to prevent buffering speaker audio
     if (audioRef.current) {
-      try {
-        audioRef.current.pause();
-      } catch (e) {}
+      try { audioRef.current.pause(); } catch (e) {}
       audioRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (e) {}
     }
 
     updateVoiceStatus('speaking');
 
-    // STOP recognition while speaking to prevent self-echo
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) {}
-    }
+    const finishSpeakingAndRestartMic = () => {
+      audioRef.current = null;
+      // Wait 750ms for acoustic room tail to fade completely before turning mic back on
+      setTimeout(() => {
+        isSpeakingRef.current = false;
+        if (isVoiceActiveRef.current) {
+          updateVoiceStatus('listening');
+          if (recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) {}
+          }
+        } else {
+          updateVoiceStatus('idle');
+        }
+      }, 750);
+    };
 
     try {
       const response = await api.post('/ai/tts/', { text: cleanText }, { responseType: 'blob' });
@@ -352,99 +377,81 @@ export default function AIChatPage() {
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
 
-      audio.onended = () => {
-        audioRef.current = null;
-        if (isVoiceActiveRef.current) {
-          updateVoiceStatus('listening');
-          // Restart recognition after speaking finishes
-          if (recognitionRef.current) {
-            try { recognitionRef.current.start(); } catch (e) {}
-          }
-        } else {
-          updateVoiceStatus('idle');
-        }
-      };
-
-      audio.onerror = () => {
-        audioRef.current = null;
-        if (isVoiceActiveRef.current) {
-          updateVoiceStatus('listening');
-          if (recognitionRef.current) {
-            try { recognitionRef.current.start(); } catch (e) {}
-          }
-        } else {
-          updateVoiceStatus('idle');
-        }
-      };
+      audio.onended = finishSpeakingAndRestartMic;
+      audio.onerror = finishSpeakingAndRestartMic;
 
       audio.play().catch((err) => {
         console.error("Audio playback error:", err);
-        if (isVoiceActiveRef.current) {
-          updateVoiceStatus('listening');
-          if (recognitionRef.current) {
-            try { recognitionRef.current.start(); } catch (e) {}
-          }
-        } else {
-          updateVoiceStatus('idle');
-        }
+        finishSpeakingAndRestartMic();
       });
     } catch (error: any) {
       console.warn("TTS generation error, falling back to Web Speech API:", error?.message || error);
       try {
         const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.onend = () => {
-          if (isVoiceActiveRef.current) {
-            updateVoiceStatus('listening');
-            if (recognitionRef.current) {
-              try { recognitionRef.current.start(); } catch (e) {}
-            }
-          } else {
-            updateVoiceStatus('idle');
+        utterance.lang = 'en-US';
+        
+        const pickHumanVoice = () => {
+          const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith('en'));
+          const preferred = [
+            (v: SpeechSynthesisVoice) => (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Online')) && v.lang.startsWith('en'),
+            (v: SpeechSynthesisVoice) => v.name.includes('Google UK English Female') || v.name.includes('Google US English Female'),
+            (v: SpeechSynthesisVoice) => v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Karen') || v.name.includes('Jenny') || v.name.includes('Aria'),
+            (v: SpeechSynthesisVoice) => v.name.toLowerCase().includes('female'),
+            (v: SpeechSynthesisVoice) => true,
+          ];
+          for (const fn of preferred) {
+            const match = voices.find(fn);
+            if (match) return match;
           }
+          return voices[0] || null;
         };
-        utterance.onerror = () => {
-          if (isVoiceActiveRef.current) {
-            updateVoiceStatus('listening');
-            if (recognitionRef.current) {
-              try { recognitionRef.current.start(); } catch (e) {}
-            }
-          } else {
-            updateVoiceStatus('idle');
-          }
+
+        const setVoiceAndSpeak = () => {
+          const voice = pickHumanVoice();
+          if (voice) utterance.voice = voice;
+          utterance.rate = 0.95;
+          utterance.pitch = 1.0;
+          utterance.volume = 1.0;
+          window.speechSynthesis.speak(utterance);
         };
-        window.speechSynthesis.speak(utterance);
+
+        utterance.onend = finishSpeakingAndRestartMic;
+        utterance.onerror = finishSpeakingAndRestartMic;
+
+        if (window.speechSynthesis.getVoices().length === 0) {
+          window.speechSynthesis.onvoiceschanged = () => {
+            window.speechSynthesis.onvoiceschanged = null;
+            setVoiceAndSpeak();
+          };
+        } else {
+          setVoiceAndSpeak();
+        }
       } catch (e: any) {
         console.warn("Web Speech API fallback failed:", e?.message || e);
-        if (isVoiceActiveRef.current) {
-          updateVoiceStatus('listening');
-          if (recognitionRef.current) {
-            try { recognitionRef.current.start(); } catch (e2) {}
-          }
-        } else {
-          updateVoiceStatus('idle');
-        }
+        finishSpeakingAndRestartMic();
       }
     }
   };
 
   const interruptSpeaking = () => {
+    isSpeakingRef.current = false;
     if (audioRef.current) {
-      try {
-        audioRef.current.pause();
-      } catch (e) {}
+      try { audioRef.current.pause(); } catch (e) {}
       audioRef.current = null;
     }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch (e) {}
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (e) {}
     }
     if (isVoiceActiveRef.current) {
       updateVoiceStatus('listening');
-      // Restart recognition after interrupting
-      if (recognitionRef.current) {
-        try { recognitionRef.current.start(); } catch (e) {}
-      }
+      setTimeout(() => {
+        if (isVoiceActiveRef.current && !isSpeakingRef.current) {
+          try { recognitionRef.current?.start(); } catch (e) {}
+        }
+      }, 300);
     } else {
       updateVoiceStatus('idle');
     }
@@ -715,45 +722,9 @@ export default function AIChatPage() {
               <p className="text-[10px] text-indigo-400 font-semibold uppercase tracking-widest">{voiceStatus}</p>
             </div>
 
-            {/* Animated pulsing elements */}
-            <div className="relative flex items-center justify-center h-44 w-44 pointer-events-none">
-              {voiceStatus === 'listening' && (
-                <>
-                  <motion.div
-                    animate={{ scale: [1, 1.4, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="absolute inset-0 rounded-full bg-indigo-500/15 border border-indigo-500/25"
-                  />
-                  <motion.div
-                    animate={{ scale: [1, 1.15, 1] }}
-                    transition={{ repeat: Infinity, duration: 1 }}
-                    className="absolute h-28 w-28 rounded-full bg-indigo-600/30 flex items-center justify-center text-indigo-300 border border-indigo-500/30 shadow-2xl shadow-indigo-500/20"
-                  >
-                    <Mic className="h-10 w-10 animate-pulse" />
-                  </motion.div>
-                </>
-              )}
-
-              {voiceStatus === 'thinking' && (
-                <div className="h-16 w-16 rounded-full border-4 border-slate-800 border-t-indigo-500 animate-spin" />
-              )}
-
-              {voiceStatus === 'speaking' && (
-                <div className="flex items-center gap-2 h-14">
-                  {[1, 2, 3, 4, 5, 6, 7].map((b) => (
-                    <motion.div
-                      key={b}
-                      animate={{ height: [16, 56, 16] }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 0.6,
-                        delay: b * 0.08,
-                      }}
-                      className="w-2 bg-indigo-500 rounded-full"
-                    />
-                  ))}
-                </div>
-              )}
+            {/* Futuristic 3D Circular Moving Voice Orb */}
+            <div className="my-4 pointer-events-none">
+              <ThreeDVoiceOrb status={voiceStatus} size="lg" />
             </div>
 
             <div className="text-xs text-slate-400 max-w-sm leading-relaxed px-6 pointer-events-none">

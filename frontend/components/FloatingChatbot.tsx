@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Sparkles, X, Send, Bot, Mic } from 'lucide-react';
+import ThreeDVoiceOrb from '@/components/ThreeDVoiceOrb';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -246,6 +247,8 @@ export default function FloatingChatbot() {
   const isVoiceActiveRef = useRef<boolean>(isVoiceActive);
   const currentStatusRef = useRef<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
   const currentReplyRef = useRef<string>('');
+  const isSpeakingRef = useRef<boolean>(false);
+  const lastSpokenTextRef = useRef<string>('');
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -317,82 +320,91 @@ export default function FloatingChatbot() {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         const rec = new SpeechRecognition();
-        rec.continuous = true;  // Keep active continuously to listen for barge-in / stop cues
+        rec.continuous = true;
         rec.lang = 'en-US';
         rec.interimResults = false;
         rec.maxAlternatives = 1;
 
         rec.onstart = () => {
-          updateVoiceStatus('listening');
+          if (!isSpeakingRef.current) {
+            updateVoiceStatus('listening');
+          }
         };
 
         rec.onresult = async (event: any) => {
-          // Only process results when actively listening (mic is off during speaking/thinking)
-          if (currentStatusRef.current !== 'listening') return;
-          
+          // Immediately reject any recognition while assistant is speaking or not listening
+          if (isSpeakingRef.current || currentStatusRef.current !== 'listening') return;
+
           const lastIndex = event.results.length - 1;
           const text = event.results[lastIndex][0].transcript.trim();
           if (!text) return;
 
           const textLower = text.toLowerCase();
 
-          // Catch "stop" commands
+          // Stop commands
           const stopWords = ['stop', 'stop talking', 'be quiet', 'shut up', 'pause'];
           if (stopWords.some(word => textLower === word || textLower.startsWith(word + ' '))) {
             interruptSpeaking();
             return;
           }
 
-          // User spoke — process as new query
+          // Self-echo filtering check: reject transcript if it matches what assistant just spoke
+          if (lastSpokenTextRef.current && (
+            lastSpokenTextRef.current.includes(textLower) ||
+            (textLower.length > 10 && lastSpokenTextRef.current.slice(0, 40).includes(textLower.slice(0, 20)))
+          )) {
+            console.log("Self-echo speech ignored:", text);
+            return;
+          }
+
+          // Immediately abort mic to dump audio buffer while processing query
+          try { rec.abort(); } catch (e) {}
+
           updateVoiceStatus('thinking');
-          // Stop mic while processing so it doesn't pick up anything else
-          try { recognitionRef.current?.stop(); } catch (e) {}
 
-            const newUserMsg: Message = { role: 'user', content: `[Voice] ${text}` };
-            const updatedMessages = [...messagesRef.current, newUserMsg];
-            setMessages(updatedMessages);
+          const newUserMsg: Message = { role: 'user', content: text };
+          const updatedMessages = [...messagesRef.current, newUserMsg];
+          setMessages(updatedMessages);
 
-            try {
-              const history = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
-              const response = await api.post('/ai/chat/', {
-                message: text,
-                history: history,
-              });
+          try {
+            const history = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
+            const response = await api.post('/ai/chat/', {
+              message: text,
+              history: history,
+            });
 
-              const reply = response.data.reply;
-              setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+            const reply = response.data.reply;
+            setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
 
-              // speak() will stop mic before playing and restart it after
-              speak(reply);
-            } catch (error) {
-              updateVoiceStatus('idle');
-              setIsVoiceActive(false);
-            }
-          };
-
+            speak(reply);
+          } catch (error) {
+            updateVoiceStatus('idle');
+            setIsVoiceActive(false);
+          }
+        };
 
         rec.onerror = (e: any) => {
-          // Only auto-restart on recoverable errors while actively listening
-          if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
+          if (!isSpeakingRef.current && isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
             setTimeout(() => {
-              if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
+              if (!isSpeakingRef.current && isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
                 try { rec.start(); } catch (err) {}
               }
-            }, 300);
+            }, 400);
           }
         };
 
         rec.onend = () => {
-          // Only restart if we're actively in listening state (not thinking/speaking)
-          if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
-            setTimeout(() => {
-              if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
-                try {
-                  rec.start();
-                } catch (e) {}
-              }
-            }, 300);
+          // Do NOT auto-restart mic while speaking or thinking
+          if (isSpeakingRef.current || !isVoiceActiveRef.current || currentStatusRef.current !== 'listening') {
+            return;
           }
+          setTimeout(() => {
+            if (!isSpeakingRef.current && isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
+              try {
+                rec.start();
+              } catch (e) {}
+            }
+          }, 400);
         };
 
         recognitionRef.current = rec;
@@ -403,12 +415,14 @@ export default function FloatingChatbot() {
   const speak = async (text: string) => {
     if (typeof window === 'undefined') return;
 
-    // Cache the spoken text to filter out self-recordings
+    isSpeakingRef.current = true;
     currentReplyRef.current = text;
 
     const cleanText = cleanTextForSpeech(text);
+    lastSpokenTextRef.current = cleanText.toLowerCase();
     
     if (!cleanText) {
+      isSpeakingRef.current = false;
       if (isVoiceActiveRef.current) {
         updateVoiceStatus('listening');
       } else {
@@ -417,15 +431,32 @@ export default function FloatingChatbot() {
       return;
     }
 
-    // Stop any currently playing audio
+    // Stop playing audio and IMMEDIATELY abort mic session to prevent buffering speaker audio
     if (audioRef.current) {
-      try {
-        audioRef.current.pause();
-      } catch (e) {}
+      try { audioRef.current.pause(); } catch (e) {}
       audioRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (e) {}
     }
 
     updateVoiceStatus('speaking');
+
+    const finishSpeakingAndRestartMic = () => {
+      audioRef.current = null;
+      // Wait 750ms for acoustic room tail to fade completely before turning mic back on
+      setTimeout(() => {
+        isSpeakingRef.current = false;
+        if (isVoiceActiveRef.current) {
+          updateVoiceStatus('listening');
+          if (recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (e) {}
+          }
+        } else {
+          updateVoiceStatus('idle');
+        }
+      }, 750);
+    };
 
     try {
       const response = await api.post('/ai/tts/', { text: cleanText }, { responseType: 'blob' });
@@ -434,85 +465,46 @@ export default function FloatingChatbot() {
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
 
-      // STOP microphone before playing to prevent self-echo
-      try { recognitionRef.current?.stop(); } catch (e) {}
-
-      const restartMicAfterSpeaking = () => {
-        audioRef.current = null;
-        if (isVoiceActiveRef.current) {
-          updateVoiceStatus('listening');
-          // Small delay so mic doesn't catch the last audio fade
-          setTimeout(() => {
-            if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
-              try { recognitionRef.current?.start(); } catch (e) {}
-            }
-          }, 400);
-        } else {
-          updateVoiceStatus('idle');
-        }
-      };
-
-      audio.onended = () => {
-        restartMicAfterSpeaking();
-      };
-
-      audio.onerror = () => {
-        restartMicAfterSpeaking();
-      };
+      audio.onended = finishSpeakingAndRestartMic;
+      audio.onerror = finishSpeakingAndRestartMic;
 
       audio.play().catch((err) => {
         console.error("Audio playback error:", err);
-        restartMicAfterSpeaking();
+        finishSpeakingAndRestartMic();
       });
     } catch (error: any) {
       console.warn("TTS generation error, falling back to Web Speech API:", error?.message || error);
-      // Also stop mic for Web Speech API fallback
-      try { recognitionRef.current?.stop(); } catch (e) {}
-
-      const restartMicAfterFallback = () => {
-        if (isVoiceActiveRef.current) {
-          updateVoiceStatus('listening');
-          setTimeout(() => {
-            if (isVoiceActiveRef.current && currentStatusRef.current === 'listening') {
-              try { recognitionRef.current?.start(); } catch (e) {}
-            }
-          }, 400);
-        } else {
-          updateVoiceStatus('idle');
-        }
-      };
-
       try {
         const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = 'en-US';
         
-        // Pick the best available natural-sounding female English voice
-        const pickFemaleVoice = () => {
-          const voices = window.speechSynthesis.getVoices();
+        const pickHumanVoice = () => {
+          const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith('en'));
           const preferred = [
-            (v: SpeechSynthesisVoice) => v.name === 'Google UK English Female',
-            (v: SpeechSynthesisVoice) => v.name === 'Google US English Female',
-            (v: SpeechSynthesisVoice) => v.lang.startsWith('en') && v.name.toLowerCase().includes('female'),
-            (v: SpeechSynthesisVoice) => v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'),
-            (v: SpeechSynthesisVoice) => v.lang.startsWith('en'),
+            (v: SpeechSynthesisVoice) => (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Online')) && v.lang.startsWith('en'),
+            (v: SpeechSynthesisVoice) => v.name.includes('Google UK English Female') || v.name.includes('Google US English Female'),
+            (v: SpeechSynthesisVoice) => v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Karen') || v.name.includes('Jenny') || v.name.includes('Aria'),
+            (v: SpeechSynthesisVoice) => v.name.toLowerCase().includes('female'),
+            (v: SpeechSynthesisVoice) => true,
           ];
           for (const fn of preferred) {
             const match = voices.find(fn);
             if (match) return match;
           }
-          return null;
+          return voices[0] || null;
         };
 
         const setVoiceAndSpeak = () => {
-          const voice = pickFemaleVoice();
+          const voice = pickHumanVoice();
           if (voice) utterance.voice = voice;
-          utterance.rate = 0.92;
-          utterance.pitch = 1.05;
+          utterance.rate = 0.95;
+          utterance.pitch = 1.0;
           utterance.volume = 1.0;
           window.speechSynthesis.speak(utterance);
         };
 
-        utterance.onend = () => restartMicAfterFallback();
-        utterance.onerror = () => restartMicAfterFallback();
+        utterance.onend = finishSpeakingAndRestartMic;
+        utterance.onerror = finishSpeakingAndRestartMic;
 
         if (window.speechSynthesis.getVoices().length === 0) {
           window.speechSynthesis.onvoiceschanged = () => {
@@ -524,25 +516,30 @@ export default function FloatingChatbot() {
         }
       } catch (e: any) {
         console.warn("Web Speech API fallback failed:", e?.message || e);
-        restartMicAfterFallback();
+        finishSpeakingAndRestartMic();
       }
     }
   };
 
   const interruptSpeaking = () => {
+    isSpeakingRef.current = false;
     if (audioRef.current) {
-      try {
-        audioRef.current.pause();
-      } catch (e) {}
+      try { audioRef.current.pause(); } catch (e) {}
       audioRef.current = null;
     }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch (e) {}
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (e) {}
     }
     if (isVoiceActiveRef.current) {
       updateVoiceStatus('listening');
+      setTimeout(() => {
+        if (isVoiceActiveRef.current && !isSpeakingRef.current) {
+          try { recognitionRef.current?.start(); } catch (e) {}
+        }
+      }, 300);
     } else {
       updateVoiceStatus('idle');
     }
@@ -639,45 +636,9 @@ export default function FloatingChatbot() {
                   <p className="text-[10px] text-indigo-400 font-semibold uppercase tracking-widest">{voiceStatus}</p>
                 </div>
 
-                {/* Animated pulsing elements */}
-                <div className="relative flex items-center justify-center h-32 w-32 pointer-events-none">
-                  {voiceStatus === 'listening' && (
-                    <>
-                      <motion.div
-                        animate={{ scale: [1, 1.4, 1] }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
-                        className="absolute inset-0 rounded-full bg-indigo-500/15 border border-indigo-500/25"
-                      />
-                      <motion.div
-                        animate={{ scale: [1, 1.15, 1] }}
-                        transition={{ repeat: Infinity, duration: 1 }}
-                        className="absolute h-20 w-20 rounded-full bg-indigo-600/30 flex items-center justify-center text-indigo-300 border border-indigo-500/30 shadow-lg shadow-indigo-500/20"
-                      >
-                        <Mic className="h-8 w-8 animate-pulse" />
-                      </motion.div>
-                    </>
-                  )}
-
-                  {voiceStatus === 'thinking' && (
-                    <div className="h-14 w-14 rounded-full border-2 border-slate-800 border-t-indigo-500 animate-spin" />
-                  )}
-
-                  {voiceStatus === 'speaking' && (
-                    <div className="flex items-center gap-1.5 h-12">
-                      {[1, 2, 3, 4, 5].map((b) => (
-                        <motion.div
-                          key={b}
-                          animate={{ height: [12, 40, 12] }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 0.6,
-                            delay: b * 0.1,
-                          }}
-                          className="w-1.5 bg-indigo-500 rounded-full"
-                        />
-                      ))}
-                    </div>
-                  )}
+                {/* Futuristic 3D Circular Moving Voice Orb */}
+                <div className="my-2 pointer-events-none">
+                  <ThreeDVoiceOrb status={voiceStatus} size="sm" />
                 </div>
 
                 <div className="text-[11px] text-slate-400 max-w-xs leading-relaxed px-4 pointer-events-none">

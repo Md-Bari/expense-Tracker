@@ -169,10 +169,14 @@ ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', '')
 ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', '21m00Tcm4TlvDq8ikWAM')
 
 # Celery Beat Periodic Tasks
-from celery.schedules import crontab
-CELERY_BEAT_SCHEDULE = {
-    'process-recurring-transactions-daily': {
-        'task': 'transactions.tasks.process_recurring_transactions',
-        'schedule': crontab(hour=0, minute=0),
-    },
-}
+try:
+    from celery.schedules import crontab
+    CELERY_BEAT_SCHEDULE = {
+        'process-recurring-transactions-daily': {
+            'task': 'transactions.tasks.process_recurring_transactions',
+            'schedule': crontab(hour=0, minute=0),
+        },
+    }
+except ImportError:
+    CELERY_BEAT_SCHEDULE = {}
+

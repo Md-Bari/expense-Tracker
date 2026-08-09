@@ -11,6 +11,10 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Aura - AI Wealth & Expense Manager",
   description: "Manage your income, expenses, budgets, savings goals, and chat with an intelligent financial advisor agent.",
+  icons: {
+    icon: '/aura_logo.png',
+    apple: '/aura_logo.png',
+  },
 };
 
 export default function RootLayout({
@@ -19,8 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${outfit.variable} font-sans antialiased bg-slate-950 text-slate-100 min-h-screen`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${outfit.variable} font-sans antialiased bg-slate-950 text-slate-100 min-h-screen`} suppressHydrationWarning>
         <Providers>
           {children}
         </Providers>

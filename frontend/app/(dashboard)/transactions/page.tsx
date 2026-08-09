@@ -19,7 +19,9 @@ import {
   Scan,
   AlertCircle,
   FileImage,
-  RefreshCw
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 export default function TransactionsPage() {
@@ -34,6 +36,12 @@ export default function TransactionsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
+
+  // Mobile expandable details row state
+  const [expandedTxId, setExpandedTxId] = useState<number | null>(null);
+  const toggleExpand = (id: number) => {
+    setExpandedTxId((prev) => (prev === id ? null : id));
+  };
 
   // Reset page when filters change
   useEffect(() => {
@@ -251,20 +259,20 @@ export default function TransactionsPage() {
 
   return (
     <>
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto w-full">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white">Transactions</h1>
-              <p className="text-sm text-slate-400 mt-1">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">Transactions</h1>
+              <p className="text-xs md:text-sm text-slate-400 mt-1">
                 Maintain and record your daily revenues and expenditures.
               </p>
             </div>
             
             <button
               onClick={() => handleOpen()}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs md:text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center gap-2 shrink-0"
             >
               <Plus className="h-4.5 w-4.5" />
               <span>Record Transaction</span>
@@ -272,8 +280,8 @@ export default function TransactionsPage() {
           </div>
 
           {/* Filtering panels */}
-          <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px] space-y-1">
+          <div className="glass-panel p-4 md:p-5 rounded-2xl border border-slate-800 grid grid-cols-2 md:flex md:flex-wrap gap-3 md:gap-4 items-end">
+            <div className="col-span-2 md:flex-1 md:min-w-[200px] space-y-1">
               <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Search</label>
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-3 text-slate-500" />
@@ -287,7 +295,7 @@ export default function TransactionsPage() {
               </div>
             </div>
 
-            <div className="w-32 space-y-1">
+            <div className="space-y-1">
               <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Type</label>
               <select
                 value={typeFilter}
@@ -300,7 +308,7 @@ export default function TransactionsPage() {
               </select>
             </div>
 
-            <div className="w-40 space-y-1">
+            <div className="space-y-1">
               <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Category</label>
               <select
                 value={categoryFilter}
@@ -314,7 +322,7 @@ export default function TransactionsPage() {
               </select>
             </div>
 
-            <div className="w-36 space-y-1">
+            <div className="space-y-1">
               <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">From</label>
               <input
                 type="date"
@@ -324,7 +332,7 @@ export default function TransactionsPage() {
               />
             </div>
 
-            <div className="w-36 space-y-1">
+            <div className="space-y-1">
               <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">To</label>
               <input
                 type="date"
@@ -336,43 +344,112 @@ export default function TransactionsPage() {
           </div>
 
           {/* Transactions List */}
-          <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-900/50 border-b border-slate-850 text-slate-400 uppercase tracking-wider text-[10px] font-semibold">
-                  <th className="py-4 px-6">Date</th>
-                  <th className="py-4 px-6">Category</th>
-                  <th className="py-4 px-6">Description</th>
-                  <th className="py-4 px-6">Type</th>
-                  <th className="py-4 px-6">Amount</th>
-                  <th className="py-4 px-6 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-850 text-slate-300">
-                {transactions?.results && transactions.results.length > 0 ? (
-                  transactions.results.map((tx: any) => (
-                    <tr key={tx.id} className="hover:bg-slate-900/25 transition-colors">
-                      <td className="py-3.5 px-6 font-medium text-slate-400">{tx.date}</td>
-                      <td className="py-3.5 px-6">
-                        <div className="flex items-center gap-2">
+          {/* Desktop Table View (hidden on mobile) */}
+          <div className="hidden md:block glass-panel rounded-2xl border border-slate-800 overflow-hidden w-full">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs min-w-full">
+                <thead>
+                  <tr className="bg-slate-900/50 border-b border-slate-850 text-slate-400 uppercase tracking-wider text-[10px] font-semibold">
+                    <th className="py-3.5 px-6">Date</th>
+                    <th className="py-3.5 px-6">Category</th>
+                    <th className="py-3.5 px-6">Description</th>
+                    <th className="py-3.5 px-6">Type</th>
+                    <th className="py-3.5 px-6">Amount</th>
+                    <th className="py-3.5 px-6 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-850 text-slate-300">
+                  {transactions?.results && transactions.results.length > 0 ? (
+                    transactions.results.map((tx: any) => (
+                      <tr key={tx.id} className="hover:bg-slate-900/25 transition-colors">
+                        <td className="py-3.5 px-6 font-medium text-slate-400 text-xs whitespace-nowrap">
+                          {tx.date}
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="h-2 w-2 rounded-full shrink-0"
+                              style={{ backgroundColor: tx.category_detail?.color || '#94a3b8' }}
+                            ></span>
+                            <span className="font-semibold text-slate-200 text-xs">
+                              {tx.category_detail?.name || 'General'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-6 italic text-slate-400 truncate max-w-[200px]">
+                          {tx.description || '-'}
+                          {tx.is_recurring && (
+                            <span className="ml-2 px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-[9px] text-indigo-400 capitalize">
+                              {tx.recurrence_period}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-6 capitalize">
                           <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: tx.category_detail?.color || '#94a3b8' }}
-                          ></span>
-                          <span>{tx.category_detail?.name || 'General'}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-6 italic text-slate-400 truncate max-w-[200px]">
-                        {tx.description || '-'}
-                        {tx.is_recurring && (
-                          <span className="ml-2 px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-[9px] text-indigo-400 capitalize">
-                            {tx.recurrence_period}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                              tx.type === 'income'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                            }`}
+                          >
+                            {tx.type}
                           </span>
-                        )}
+                        </td>
+                        <td className={`py-3.5 px-6 font-bold text-xs whitespace-nowrap ${tx.type === 'income' ? 'text-emerald-400' : 'text-slate-100'}`}>
+                          {tx.type === 'income' ? '+' : '-'}৳{parseFloat(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3.5 px-6 text-center space-x-2">
+                          <button
+                            onClick={() => handleOpen(tx)}
+                            className="p-1 rounded hover:bg-slate-800 text-slate-500 hover:text-white"
+                            title="Edit"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteTxMutation.mutate(tx.id)}
+                            className="p-1 rounded hover:bg-rose-950/30 text-slate-500 hover:text-rose-400"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="text-center py-12 text-slate-500 font-medium">
+                        No transactions recorded. Click Record Transaction to begin.
                       </td>
-                      <td className="py-3.5 px-6 capitalize">
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Mobile Card View (visible ONLY on mobile md:hidden) */}
+          <div className="block md:hidden space-y-3 w-full">
+            {transactions?.results && transactions.results.length > 0 ? (
+              transactions.results.map((tx: any) => {
+                const isExpanded = expandedTxId === tx.id;
+                return (
+                  <div
+                    key={tx.id}
+                    className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3 transition-all"
+                  >
+                    {/* Top Row: Category dot & Name, Type badge, Amount & Arrow */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: tx.category_detail?.color || '#94a3b8' }}
+                        ></span>
+                        <span className="font-bold text-white text-sm">
+                          {tx.category_detail?.name || 'General'}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
                             tx.type === 'income'
                               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                               : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
@@ -380,100 +457,140 @@ export default function TransactionsPage() {
                         >
                           {tx.type}
                         </span>
-                      </td>
-                      <td className={`py-3.5 px-6 font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-slate-100'}`}>
-                        {tx.type === 'income' ? '+' : '-'}৳{parseFloat(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3.5 px-6 text-center space-x-2">
-                        <button
-                          onClick={() => handleOpen(tx)}
-                          className="p-1 rounded hover:bg-slate-800 text-slate-500 hover:text-white"
-                          title="Edit"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => deleteTxMutation.mutate(tx.id)}
-                          className="p-1 rounded hover:bg-rose-950/30 text-slate-500 hover:text-rose-400"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="text-center py-12 text-slate-500 font-medium">
-                      No transactions recorded. Click Record Transaction to begin.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                      </div>
 
-            {/* Pagination Controls */}
-            {transactions?.results && transactions.count > 10 && (
-              <div className="flex items-center justify-between px-6 py-4 bg-slate-900/20 border-t border-slate-850 text-slate-400 text-xs">
-                <div>
-                  Showing{' '}
-                  <span className="font-semibold text-slate-200">
-                    {(page - 1) * 10 + 1}
-                  </span>{' '}
-                  to{' '}
-                  <span className="font-semibold text-slate-200">
-                    {Math.min(page * 10, transactions.count)}
-                  </span>{' '}
-                  of{' '}
-                  <span className="font-semibold text-slate-200">{transactions.count}</span>{' '}
-                  entries
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                      page === 1
-                        ? 'border-slate-850 text-slate-600 bg-slate-950/20 cursor-not-allowed'
-                        : 'border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 bg-slate-900/40 cursor-pointer'
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  
-                  {/* Page Numbers */}
-                  {Array.from({ length: Math.ceil(transactions.count / 10) }).map((_, idx) => {
-                    const pageNum = idx + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setPage(pageNum)}
-                        className={`h-8 w-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                          page === pageNum
-                            ? 'bg-indigo-600 text-white'
-                            : 'border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 bg-slate-900/40'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+                      <div className="flex items-center gap-2">
+                        <span className={`font-black text-sm ${tx.type === 'income' ? 'text-emerald-400' : 'text-slate-100'}`}>
+                          {tx.type === 'income' ? '+' : '-'}৳{parseFloat(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                        <button
+                          onClick={() => toggleExpand(tx.id)}
+                          className="p-1.5 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/50 active:scale-95 transition-all"
+                          aria-label="Toggle Details"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-indigo-400" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
 
-                  <button
-                    onClick={() => setPage((p) => Math.min(Math.ceil(transactions.count / 10), p + 1))}
-                    disabled={page >= Math.ceil(transactions.count / 10)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
-                      page >= Math.ceil(transactions.count / 10)
-                        ? 'border-slate-850 text-slate-600 bg-slate-950/20 cursor-not-allowed'
-                        : 'border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 bg-slate-900/40 cursor-pointer'
-                    }`}
-                  >
-                    Next
-                  </button>
-                </div>
+                    {/* Sub Row: Date */}
+                    <div className="text-xs text-slate-400 font-medium">
+                      Date: {tx.date}
+                    </div>
+
+                    {/* Collapsible Details Panel when Arrow is clicked */}
+                    {isExpanded && (
+                      <div className="pt-3 border-t border-slate-850 space-y-2.5 text-xs text-slate-300">
+                        <div className="flex items-start justify-between">
+                          <span className="text-slate-400 font-medium shrink-0">Description:</span>
+                          <span className="text-slate-200 italic text-right ml-4">
+                            {tx.description || 'No description provided'}
+                          </span>
+                        </div>
+
+                        {tx.is_recurring && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400 font-medium">Recurring:</span>
+                            <span className="text-indigo-400 font-semibold capitalize">
+                              {tx.recurrence_period}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800/60">
+                          <button
+                            onClick={() => handleOpen(tx)}
+                            className="px-3.5 py-1.5 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1.5 hover:bg-indigo-600/30 transition-all"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => deleteTxMutation.mutate(tx.id)}
+                            className="px-3.5 py-1.5 rounded-xl bg-rose-950/40 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center gap-1.5 hover:bg-rose-950/60 transition-all"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-12 text-slate-500 font-medium glass-panel rounded-2xl border border-slate-800">
+                No transactions recorded. Click Record Transaction to begin.
               </div>
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {transactions?.results && transactions.count > 10 && (
+            <div className="glass-panel rounded-2xl border border-slate-800 p-4 flex flex-col sm:flex-row items-center justify-between text-slate-400 text-xs gap-3">
+              <div>
+                Showing{' '}
+                <span className="font-semibold text-slate-200">
+                  {(page - 1) * 10 + 1}
+                </span>{' '}
+                to{' '}
+                <span className="font-semibold text-slate-200">
+                  {Math.min(page * 10, transactions.count)}
+                </span>{' '}
+                of{' '}
+                <span className="font-semibold text-slate-200">{transactions.count}</span>{' '}
+                entries
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                    page === 1
+                      ? 'border-slate-850 text-slate-600 bg-slate-950/20 cursor-not-allowed'
+                      : 'border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 bg-slate-900/40 cursor-pointer'
+                  }`}
+                >
+                  Previous
+                </button>
+                
+                {/* Page Numbers */}
+                {Array.from({ length: Math.ceil(transactions.count / 10) }).map((_, idx) => {
+                  const pageNum = idx + 1;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      className={`h-8 w-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        page === pageNum
+                          ? 'bg-indigo-600 text-white'
+                          : 'border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 bg-slate-900/40'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => setPage((p) => Math.min(Math.ceil(transactions.count / 10), p + 1))}
+                  disabled={page >= Math.ceil(transactions.count / 10)}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+                    page >= Math.ceil(transactions.count / 10)
+                      ? 'border-slate-850 text-slate-600 bg-slate-950/20 cursor-not-allowed'
+                      : 'border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 bg-slate-900/40 cursor-pointer'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

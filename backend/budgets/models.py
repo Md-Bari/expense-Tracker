@@ -4,6 +4,12 @@ from transactions.models import Category
 
 
 class Budget(models.Model):
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('exceeded', 'Exceeded'),
+    )
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -20,6 +26,7 @@ class Budget(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     start_date = models.DateField()
     end_date = models.DateField()
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='active')
     
     # Used to track if the user has already been alerted about this budget (e.g. 80%, 100%)
     notified_percentage = models.IntegerField(default=0)

@@ -19,12 +19,20 @@ import {
   ShieldCheck,
   Sun,
   Moon,
+  Menu,
+  X,
 } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
@@ -82,90 +90,148 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen fixed left-0 top-0 text-slate-300">
-      {/* Brand logo */}
-      <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-        <img 
-          src="/aura_logo.png" 
-          alt="Aura Logo" 
-          className="h-9 w-9 rounded-lg object-cover shadow-lg shadow-indigo-500/20 border border-slate-800"
+    <>
+      {/* Mobile Top Navigation Header */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 w-full">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileOpen(true)}
+            className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700/50 active:scale-95 transition-all"
+            aria-label="Open Navigation Menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <img
+              src="/aura_logo.png"
+              alt="Aura Logo"
+              className="h-7 w-7 rounded-lg object-cover border border-slate-800"
+            />
+            <span className="text-base font-bold text-white tracking-tight">Aura AI</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard?notifications=true" className="relative p-2 hover:text-white hover:bg-slate-800 rounded-xl text-slate-400">
+            <Bell className="h-4.5 w-4.5" />
+            {unreadNotifications > 0 && (
+              <span className="absolute top-1 right-1 h-3.5 w-3.5 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
+                {unreadNotifications}
+              </span>
+            )}
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile Backdrop Overlay */}
+      {isMobileOpen && (
+        <div
+          onClick={() => setIsMobileOpen(false)}
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 md:hidden transition-opacity duration-300"
         />
-        <div>
-          <h1 className="text-lg font-bold text-white tracking-tight">Aura AI</h1>
-          <p className="text-xs text-indigo-400 font-medium">Smart Wealth Manager</p>
-        </div>
-      </div>
+      )}
 
-      {/* Navigation links */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-250 ${
-                isActive
-                  ? 'bg-indigo-600/15 text-indigo-400 border-l-2 border-indigo-500 font-semibold'
-                  : 'hover:bg-slate-800/60 hover:text-white'
-              }`}
-            >
-              <Icon className={`h-5 w-5 ${isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-white'}`} />
-              <span>{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* User profile section */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/40 space-y-3">
-        {/* Notifications and Scan Bar */}
-        <div className="flex items-center justify-between px-2 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-slate-400 font-medium">Currency: {user?.currency || 'BDT'}</span>
+      {/* Main Sidebar Drawer */}
+      <aside
+        className={`fixed top-0 left-0 bottom-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen text-slate-300 transition-transform duration-300 ease-in-out md:translate-x-0 ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Brand logo & Close button */}
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src="/aura_logo.png"
+              alt="Aura Logo"
+              className="h-9 w-9 rounded-lg object-cover shadow-lg shadow-indigo-500/20 border border-slate-800"
+            />
+            <div>
+              <h1 className="text-lg font-bold text-white tracking-tight">Aura AI</h1>
+              <p className="text-xs text-indigo-400 font-medium">Smart Wealth Manager</p>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard?notifications=true" className="relative p-1 hover:text-white hover:bg-slate-800 rounded-lg">
-              <Bell className="h-4 w-4" />
-              {unreadNotifications > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center animate-bounce">
-                  {unreadNotifications}
-                </span>
-              )}
-            </Link>
-          </div>
+          <button
+            onClick={() => setIsMobileOpen(false)}
+            className="md:hidden p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            aria-label="Close Navigation Menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* User Card */}
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-900 border border-slate-800/40">
-          <div className="h-10 w-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/20">
-            {user?.username?.substring(0, 2).toUpperCase() || 'US'}
+        {/* Navigation links */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setIsMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-250 ${
+                  isActive
+                    ? 'bg-indigo-600/15 text-indigo-400 border-l-2 border-indigo-500 font-semibold'
+                    : 'hover:bg-slate-800/60 hover:text-white'
+                }`}
+              >
+                <Icon className={`h-5 w-5 ${isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-white'}`} />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User profile section */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950/40 space-y-3">
+          {/* Notifications and Scan Bar */}
+          <div className="flex items-center justify-between px-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-slate-400 font-medium">Currency: {user?.currency || 'BDT'}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Link href="/dashboard?notifications=true" className="relative p-1 hover:text-white hover:bg-slate-800 rounded-lg">
+                <Bell className="h-4 w-4" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center animate-bounce">
+                    {unreadNotifications}
+                  </span>
+                )}
+              </Link>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">{user?.username || 'User'}</p>
-            <p className="text-xs text-slate-500 truncate">{user?.email || 'user@example.com'}</p>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 rounded-lg hover:bg-slate-800 hover:text-white text-slate-500 transition-colors cursor-pointer"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-            <button
-              onClick={logout}
-              className="p-1.5 rounded-lg hover:bg-rose-950/30 hover:text-rose-400 text-slate-500 transition-colors cursor-pointer"
-              title="Log Out"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+
+          {/* User Card */}
+          <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-900 border border-slate-800/40">
+            <div className="h-10 w-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/20">
+              {user?.username?.substring(0, 2).toUpperCase() || 'US'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{user?.username || 'User'}</p>
+              <p className="text-xs text-slate-500 truncate">{user?.email || 'user@example.com'}</p>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={toggleTheme}
+                className="p-1.5 rounded-lg hover:bg-slate-800 hover:text-white text-slate-500 transition-colors cursor-pointer"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+              <button
+                onClick={logout}
+                className="p-1.5 rounded-lg hover:bg-rose-950/30 hover:text-rose-400 text-slate-500 transition-colors cursor-pointer"
+                title="Log Out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
+
