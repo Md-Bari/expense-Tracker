@@ -11,8 +11,8 @@ interface ThreeDVoiceOrbProps {
 
 export default function ThreeDVoiceOrb({ status, size = 'lg' }: ThreeDVoiceOrbProps) {
   const isSm = size === 'sm';
-  const containerSize = isSm ? 'w-40 h-40' : 'w-64 h-64 md:w-80 md:h-80';
-  const coreSize = isSm ? 'w-20 h-20' : 'w-32 h-32 md:w-40 md:h-40';
+  const containerSize = isSm ? 'w-14 h-14' : 'w-64 h-64 md:w-80 md:h-80';
+  const coreSize = isSm ? 'w-8 h-8' : 'w-32 h-32 md:w-40 md:h-40';
 
   // Status colors & gradients
   const getGradient = () => {
@@ -157,7 +157,7 @@ export default function ThreeDVoiceOrb({ status, size = 'lg' }: ThreeDVoiceOrbPr
                 transition={{ repeat: Infinity, duration: 1.2 }}
                 className="flex flex-col items-center gap-1"
               >
-                <Mic className="h-8 w-8 text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+                <Mic className={`${isSm ? 'h-4 w-4' : 'h-8 w-8'} text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]`} />
               </motion.div>
             )}
 
@@ -167,30 +167,30 @@ export default function ThreeDVoiceOrb({ status, size = 'lg' }: ThreeDVoiceOrbPr
                 transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
                 className="flex flex-col items-center gap-1"
               >
-                <Cpu className="h-8 w-8 text-pink-300 drop-shadow-[0_0_12px_rgba(244,114,182,0.9)]" />
+                <Cpu className={`${isSm ? 'h-4 w-4' : 'h-8 w-8'} text-pink-300 drop-shadow-[0_0_12px_rgba(244,114,182,0.9)]`} />
               </motion.div>
             )}
 
             {status === 'speaking' && (
-              <div className="flex items-center gap-1.5 h-8">
+              <div className={`flex items-center ${isSm ? 'gap-1 h-4' : 'gap-1.5 h-8'}`}>
                 {[1, 2, 3, 4, 5].map((bar) => (
                   <motion.div
                     key={bar}
-                    animate={{ height: [8, 28, 8] }}
+                    animate={{ height: isSm ? [4, 14, 4] : [8, 28, 8] }}
                     transition={{
                       repeat: Infinity,
                       duration: 0.5,
                       delay: bar * 0.08,
                       ease: 'easeInOut',
                     }}
-                    className="w-1.5 rounded-full bg-emerald-300 shadow-[0_0_10px_#6ee7b7]"
+                    className={`${isSm ? 'w-1' : 'w-1.5'} rounded-full bg-emerald-300 shadow-[0_0_10px_#6ee7b7]`}
                   />
                 ))}
               </div>
             )}
 
             {status === 'idle' && (
-              <Sparkles className="h-7 w-7 text-indigo-200 opacity-80 drop-shadow-[0_0_8px_rgba(199,210,254,0.7)]" />
+              <Sparkles className={`${isSm ? 'h-3.5 w-3.5' : 'h-7 w-7'} text-indigo-200 opacity-80 drop-shadow-[0_0_8px_rgba(199,210,254,0.7)]`} />
             )}
           </div>
         </div>

@@ -206,14 +206,41 @@ export default function AIChatPage() {
     currentStatusRef.current = status;
   };
 
-  // Stop audio on unmount
+  // Complete Voice & Audio Teardown Cleanup on Page Exit / Navigation Unmount
   useEffect(() => {
     return () => {
+      // 1. Immediately deactivate voice mode flags
+      isVoiceActiveRef.current = false;
+      isSpeakingRef.current = false;
+
+      // 2. Stop and pause ElevenLabs audio playback
       if (audioRef.current) {
         try {
           audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.src = '';
         } catch (e) {}
         audioRef.current = null;
+      }
+
+      // 3. Cancel browser Web Speech Synthesis
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (e) {}
+      }
+
+      // 4. Abort and stop SpeechRecognition mic listener
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.onresult = null;
+          recognitionRef.current.onend = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current.onstart = null;
+          recognitionRef.current.abort();
+          recognitionRef.current.stop();
+        } catch (e) {}
+        recognitionRef.current = null;
       }
     };
   }, []);
@@ -343,10 +370,13 @@ export default function AIChatPage() {
       return;
     }
 
-    // Stop playing audio and IMMEDIATELY abort mic session to prevent buffering speaker audio
+    // Stop playing audio and IMMEDIATELY abort mic session to prevent audio feedback loop
     if (audioRef.current) {
       try { audioRef.current.pause(); } catch (e) {}
       audioRef.current = null;
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
     }
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch (e) {}
@@ -356,7 +386,6 @@ export default function AIChatPage() {
 
     const finishSpeakingAndRestartMic = () => {
       audioRef.current = null;
-      // Wait 750ms for acoustic room tail to fade completely before turning mic back on
       setTimeout(() => {
         isSpeakingRef.current = false;
         if (isVoiceActiveRef.current) {
@@ -367,69 +396,53 @@ export default function AIChatPage() {
         } else {
           updateVoiceStatus('idle');
         }
-      }, 750);
+      }, 500);
     };
 
+    // Instant zero-latency speech start using Web Speech API
     try {
-      const response = await api.post('/ai/tts/', { text: cleanText }, { responseType: 'blob' });
-      const blob = response.data;
-      const audioUrl = URL.createObjectURL(blob);
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-
-      audio.onended = finishSpeakingAndRestartMic;
-      audio.onerror = finishSpeakingAndRestartMic;
-
-      audio.play().catch((err) => {
-        console.error("Audio playback error:", err);
-        finishSpeakingAndRestartMic();
-      });
-    } catch (error: any) {
-      console.warn("TTS generation error, falling back to Web Speech API:", error?.message || error);
-      try {
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = 'en-US';
-        
-        const pickHumanVoice = () => {
-          const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith('en'));
-          const preferred = [
-            (v: SpeechSynthesisVoice) => (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Online')) && v.lang.startsWith('en'),
-            (v: SpeechSynthesisVoice) => v.name.includes('Google UK English Female') || v.name.includes('Google US English Female'),
-            (v: SpeechSynthesisVoice) => v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Karen') || v.name.includes('Jenny') || v.name.includes('Aria'),
-            (v: SpeechSynthesisVoice) => v.name.toLowerCase().includes('female'),
-            (v: SpeechSynthesisVoice) => true,
-          ];
-          for (const fn of preferred) {
-            const match = voices.find(fn);
-            if (match) return match;
-          }
-          return voices[0] || null;
-        };
-
-        const setVoiceAndSpeak = () => {
-          const voice = pickHumanVoice();
-          if (voice) utterance.voice = voice;
-          utterance.rate = 0.95;
-          utterance.pitch = 1.0;
-          utterance.volume = 1.0;
-          window.speechSynthesis.speak(utterance);
-        };
-
-        utterance.onend = finishSpeakingAndRestartMic;
-        utterance.onerror = finishSpeakingAndRestartMic;
-
-        if (window.speechSynthesis.getVoices().length === 0) {
-          window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.onvoiceschanged = null;
-            setVoiceAndSpeak();
-          };
-        } else {
-          setVoiceAndSpeak();
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'en-US';
+      
+      const pickHumanVoice = () => {
+        const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith('en'));
+        const preferred = [
+          (v: SpeechSynthesisVoice) => (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Online')) && v.lang.startsWith('en'),
+          (v: SpeechSynthesisVoice) => v.name.includes('Google UK English Female') || v.name.includes('Google US English Female'),
+          (v: SpeechSynthesisVoice) => v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Karen') || v.name.includes('Jenny') || v.name.includes('Aria'),
+          (v: SpeechSynthesisVoice) => v.name.toLowerCase().includes('female'),
+          (v: SpeechSynthesisVoice) => true,
+        ];
+        for (const fn of preferred) {
+          const match = voices.find(fn);
+          if (match) return match;
         }
-      } catch (e: any) {
-        console.warn("Web Speech API fallback failed:", e?.message || e);
-        finishSpeakingAndRestartMic();
+        return voices[0] || null;
+      };
+
+      const setVoiceAndSpeak = () => {
+        const voice = pickHumanVoice();
+        if (voice) utterance.voice = voice;
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        window.speechSynthesis.speak(utterance);
+      };
+
+      utterance.onend = finishSpeakingAndRestartMic;
+      utterance.onerror = finishSpeakingAndRestartMic;
+
+      if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.onvoiceschanged = null;
+          setVoiceAndSpeak();
+        };
+      } else {
+        setVoiceAndSpeak();
       }
+    } catch (e: any) {
+      console.warn("Web Speech API instant playback failed:", e?.message || e);
+      finishSpeakingAndRestartMic();
     }
   };
 
@@ -446,12 +459,14 @@ export default function AIChatPage() {
       try { recognitionRef.current.abort(); } catch (e) {}
     }
     if (isVoiceActiveRef.current) {
-      updateVoiceStatus('listening');
+      updateVoiceStatus('thinking');
+      // Enforce 2 seconds delay before restarting microphone after interrupt
       setTimeout(() => {
         if (isVoiceActiveRef.current && !isSpeakingRef.current) {
+          updateVoiceStatus('listening');
           try { recognitionRef.current?.start(); } catch (e) {}
         }
-      }, 300);
+      }, 2000);
     } else {
       updateVoiceStatus('idle');
     }
@@ -709,47 +724,6 @@ export default function AIChatPage() {
 
   return (
       <main className="flex-1 h-screen flex flex-col bg-slate-950 relative overflow-hidden">
-        {/* Voice Mode Fullscreen Overlay */}
-        {isVoiceActive && (
-          <div 
-            onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
-            className={`fixed inset-y-0 left-64 right-0 bg-slate-950/98 flex flex-col items-center justify-center p-8 z-30 space-y-6 text-center ${
-              voiceStatus === 'speaking' ? 'cursor-pointer hover:bg-slate-950/95 transition-all' : ''
-            }`}
-          >
-            <div className="space-y-1 pointer-events-none">
-              <h2 className="text-lg font-bold text-white tracking-wider uppercase">Voice Assistant</h2>
-              <p className="text-[10px] text-indigo-400 font-semibold uppercase tracking-widest">{voiceStatus}</p>
-            </div>
-
-            {/* Futuristic 3D Circular Moving Voice Orb */}
-            <div className="my-4 pointer-events-none">
-              <ThreeDVoiceOrb status={voiceStatus} size="lg" />
-            </div>
-
-            <div className="text-xs text-slate-400 max-w-sm leading-relaxed px-6 pointer-events-none">
-              {voiceStatus === 'listening' && "Continuous mode. Speak a command or query..."}
-              {voiceStatus === 'thinking' && "Structuring RAG context..."}
-              {voiceStatus === 'speaking' && (
-                <div className="space-y-1">
-                  <p>Aura is speaking the answer...</p>
-                  <p className="text-[10px] text-indigo-400 font-bold animate-pulse">Say "stop" or start speaking to interrupt</p>
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleVoice();
-              }}
-              className="px-6 py-3 bg-rose-600/10 hover:bg-rose-600/25 border border-rose-500/20 rounded-2xl text-xs font-bold text-rose-400 transition-all cursor-pointer shadow-lg"
-            >
-              Close Session
-            </button>
-          </div>
-        )}
-
         {/* Top Header */}
         <header className="p-6 border-b border-slate-900 flex items-center gap-3 bg-slate-900/10">
           <div className="h-10 w-10 rounded-xl bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center">
@@ -836,37 +810,82 @@ export default function AIChatPage() {
           </div>
         </div>
 
-        {/* Input box form */}
+        {/* Input box form / Voice Control Bar */}
         <footer className="p-6 border-t border-slate-900 bg-slate-900/10">
-          <form onSubmit={handleSend} className="max-w-4xl mx-auto relative flex items-center gap-3">
-            {/* Voice Mode Button */}
-            <button
-              type="button"
-              onClick={toggleVoice}
-              className="p-3.5 rounded-2xl bg-slate-950 border border-slate-850 hover:bg-slate-900 hover:text-white text-indigo-400 transition-all cursor-pointer shrink-0 shadow-sm"
-              title="Voice Mode"
-            >
-              <Mic className="h-4.5 w-4.5" />
-            </button>
-
-            <div className="relative flex-1 flex items-center">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask Aura a financial query..."
-                disabled={loading}
-                className="w-full bg-slate-950 border border-slate-850 rounded-2xl py-3.5 pl-5 pr-14 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="absolute right-3 p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 transition-all disabled:opacity-30 disabled:pointer-events-none active:scale-[0.95]"
+          <div className="max-w-4xl mx-auto">
+            {isVoiceActive ? (
+              <div 
+                onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
+                className={`bg-slate-950 border border-indigo-500/30 rounded-2xl p-3 flex items-center justify-between shadow-lg shadow-indigo-500/5 transition-all ${
+                  voiceStatus === 'speaking' ? 'cursor-pointer hover:border-indigo-500/60' : ''
+                }`}
               >
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
-          </form>
+                <div className="flex items-center gap-3">
+                  {/* Embedded 3D Voice Orb */}
+                  <div className="shrink-0">
+                    <ThreeDVoiceOrb status={voiceStatus} size="sm" />
+                  </div>
+
+                  {/* Status & Live Prompt Description */}
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="text-[11px] font-bold text-white uppercase tracking-wider">
+                        Voice Assistant • {voiceStatus}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      {voiceStatus === 'listening' && "Continuous listening mode... Speak your query"}
+                      {voiceStatus === 'thinking' && "Processing financial context..."}
+                      {voiceStatus === 'speaking' && "Aura is speaking... (click bar or say 'stop' to interrupt)"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Turn Off / Switch back to text box */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleVoice();
+                  }}
+                  className="px-4 py-2 bg-rose-600/10 hover:bg-rose-600/20 border border-rose-500/20 rounded-xl text-xs font-semibold text-rose-400 transition-all cursor-pointer shrink-0"
+                >
+                  Turn Off Voice
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSend} className="relative flex items-center gap-3">
+                {/* Voice Mode Button */}
+                <button
+                  type="button"
+                  onClick={toggleVoice}
+                  className="p-3.5 rounded-2xl bg-slate-950 border border-slate-850 hover:bg-slate-900 hover:text-white text-indigo-400 transition-all cursor-pointer shrink-0 shadow-sm"
+                  title="Voice Mode"
+                >
+                  <Mic className="h-4.5 w-4.5" />
+                </button>
+
+                <div className="relative flex-1 flex items-center">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Ask Aura a financial query..."
+                    disabled={loading}
+                    className="w-full bg-slate-950 border border-slate-850 rounded-2xl py-3.5 pl-5 pr-14 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading || !input.trim()}
+                    className="absolute right-3 p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 transition-all disabled:opacity-30 disabled:pointer-events-none active:scale-[0.95]"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </footer>
       </main>
   );

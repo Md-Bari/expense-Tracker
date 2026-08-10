@@ -77,16 +77,26 @@ Output JSON ONLY format:
      "title": string | null
   }
 }
+"""
 
-Use YYYY-MM-DD for dates. Assume current date is 2026-08-04.
-If user asks about "this week", compute start_date as 2026-07-28 (Monday) to 2026-08-03.
-If user asks about "this month", compute start_date as 2026-08-01 to 2026-08-04.
+    today = datetime.date.today()
+    today_str = today.strftime('%Y-%m-%d')
+    start_of_month = today.replace(day=1).strftime('%Y-%m-%d')
+
+    system_prompt += f"""
+Use YYYY-MM-DD for dates. Current date is {today_str}.
+Do NOT set start_date or end_date unless the user explicitly mentions a specific date or date range in their query!
+If user asks generally about transactions (e.g. I want to know about my transactions, show transactions), leave start_date and end_date as null.
+If user explicitly asks about this month, set start_date to {start_of_month} and end_date to {today_str}.
 """
 
     messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": state['current_query']}
+        {"role": "system", "content": system_prompt}
     ]
+    if state.get('message_history'):
+        for msg in state['message_history'][-15:]:
+            messages.append({"role": msg['role'], "content": msg['content']})
+    messages.append({"role": "user", "content": state['current_query']})
 
     try:
         response = llm.invoke(messages)
@@ -164,40 +174,53 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
     return {'tool_result': result}
 
 
-def synthesize_response_node(state: AgentState) -> Dict[str, Any]:
+def get_all_stored_user_data(user):
     """
-    LLM node that takes the query and tool results, and drafts the natural language advice.
+    Retrieves and calculates ALL stored financial data for the given user:
+    - Overall Income, Expenses, and Net Balance
+    - Count and list of recent transactions
+    - Active Budgets and Spent amounts
+    - Active Savings Goals
+    - Expense Sheets Summary
     """
-    llm = get_groq_llm(temperature=0.2)
-    currency = state['user_currency']
-
-    # Fetch budgets, goals, and user metrics for context injection
     from budgets.models import Budget
     from savings.models import SavingsGoal
+    from transactions.models import Transaction, ExpenseSheet
     from django.db.models import Sum
 
     try:
-        user = User.objects.get(id=state['user_id'])
-        # 1. Get active budgets
+        # 1. Total Income & Total Expense
+        income_sum = Transaction.objects.filter(user=user, type='income').aggregate(t=Sum('amount'))['t'] or 0.0
+        expense_sum = Transaction.objects.filter(user=user, type='expense').aggregate(t=Sum('amount'))['t'] or 0.0
+        total_tx_count = Transaction.objects.filter(user=user).count()
+
+        # 2. Recent Transactions (Up to 50 transactions to prevent truncation)
+        recent_txs_qs = Transaction.objects.filter(user=user).order_by('-date', '-id')[:50]
+        recent_txs = [{
+            'date': str(tx.date),
+            'category': tx.category.name if tx.category else 'Uncategorized',
+            'type': tx.type,
+            'amount': float(tx.amount),
+            'description': tx.description
+        } for tx in recent_txs_qs]
+
+        # 3. Budgets
         budgets = Budget.objects.filter(user=user)
         budgets_list = []
         for b in budgets:
-            # Calculate total spent for this budget's duration in its category
             spent_qs = Transaction.objects.filter(user=user, date__gte=b.start_date, date__lte=b.end_date, type='expense')
             if b.category:
                 spent_qs = spent_qs.filter(category=b.category)
             spent_sum = spent_qs.aggregate(total=Sum('amount'))['total'] or 0.0
-            
-            cat_name = b.category.name if b.category else "All Categories"
             budgets_list.append({
-                'category': cat_name,
+                'category': b.category.name if b.category else "All Categories",
                 'limit_amount': float(b.amount),
                 'spent_amount': float(spent_sum),
                 'start_date': str(b.start_date),
                 'end_date': str(b.end_date)
             })
 
-        # 2. Get active savings goals
+        # 4. Savings Goals
         goals = SavingsGoal.objects.filter(user=user)
         goals_list = [{
             'name': g.name,
@@ -207,13 +230,42 @@ def synthesize_response_node(state: AgentState) -> Dict[str, Any]:
             'status': g.status
         } for g in goals]
 
-        profile_context = f"""
-[USER FINANCIAL CONTEXT]
+        # 5. Expense Sheets
+        sheets = ExpenseSheet.objects.filter(user=user)
+        sheets_list = [{
+            'title': s.title,
+            'description': s.description,
+            'item_count': s.items.count(),
+            'total_amount': sum(float(item.amount) for item in s.items.all())
+        } for s in sheets]
+
+        return f"""
+[COMPLETE USER STORED FINANCIAL DATA]
+Account Username: {user.username}
+Active Currency: {user.currency}
+Total Recorded Income: {float(income_sum)} {user.currency}
+Total Recorded Expenses: {float(expense_sum)} {user.currency}
+Net Balance: {float(income_sum - expense_sum)} {user.currency}
+Total Transactions Count: {total_tx_count}
+Recorded Transactions List (Up to 50): {json.dumps(recent_txs, default=str)}
 Active Budgets: {json.dumps(budgets_list, default=str)}
 Active Savings Goals: {json.dumps(goals_list, default=str)}
-Active Currency: {user.currency}
-Username: {user.username}
+Expense Sheets: {json.dumps(sheets_list, default=str)}
 """
+    except Exception as e:
+        return f"[COMPLETE USER STORED FINANCIAL DATA] Error retrieving: {str(e)}"
+
+
+def synthesize_response_node(state: AgentState) -> Dict[str, Any]:
+    """
+    LLM node that takes the query and tool results, and drafts the natural language advice.
+    """
+    llm = get_groq_llm(temperature=0.0)
+    currency = state['user_currency']
+
+    try:
+        user = User.objects.get(id=state['user_id'])
+        profile_context = get_all_stored_user_data(user)
     except Exception as e:
         profile_context = f"[USER FINANCIAL CONTEXT] Unavailable: {str(e)}"
 
@@ -229,41 +281,58 @@ Username: {user.username}
         any(clean_query == g or clean_query.startswith(g + ' ') for g in greeting_words)
     )
 
-    system_prompt = f"""You are Aura — a warm, intelligent, and deeply caring personal financial advisor. You speak exactly like a real human woman having a natural conversation, never robotic or stiff.
+    system_prompt = f"""You are Aura - a warm, intelligent, and deeply caring personal financial advisor. You speak exactly like a real human woman having a natural conversation, never robotic or stiff.
 
 Core Personality Rules:
-1. Speak naturally, warmly, and conversationally — like a knowledgeable best friend who happens to be a financial expert. Use contractions, filler transitions like "So,", "Now,", "Here's the thing —", "What's really interesting is..."
-2. NEVER read out punctuation like commas, dashes, colons. Your text will be read aloud — write it the way you'd actually say it.
+1. Speak naturally, warmly, and conversationally - like a knowledgeable best friend who happens to be a financial expert. Use contractions, filler transitions like So, Now, Here is the thing, What is really interesting is...
+2. NEVER read out punctuation like commas, dashes, colons. Your text will be read aloud - write it the way you would actually say it.
 3. ALL monetary amounts and numbers MUST be spelled out in full spoken words. NEVER use digit-only numbers. Examples:
-   - 17000 → "seventeen thousand"
-   - 100 → "one hundred"
-   - 2500 → "two thousand five hundred"
-   - 1250.50 → "one thousand two hundred fifty taka and fifty paisa"
-   - 85% → "eighty five percent"
-4. Currency: Use "{currency}" context. When spelling out amounts, say "taka" for BDT (e.g., "seventeen thousand taka").
-5. GREETINGS RULE (STRICT): If the user greets you or says hello/hi, respond ONLY with a brief, warm greeting asking how you can help (1-2 sentences max). NEVER talk about their budgets, savings goals, transactions, or account balances UNLESS the user explicitly asks for them in their message!
-6. Keep your responses concise, direct, and conversational. Do NOT give a massive structured list of suggestions or data breakdowns unless the user explicitly asks for recommendations, detailed analysis, or lists. Simply answer the user's specific query or statement directly in a few natural sentences (2-4 sentences max).
+   - 17000 -> seventeen thousand
+   - 100 -> one hundred
+   - 2500 -> two thousand five hundred
+   - 1250.50 -> one thousand two hundred fifty taka and fifty paisa
+   - 85% -> eighty five percent
+4. Currency: Use {currency} context. When spelling out amounts, say taka for BDT (e.g., seventeen thousand taka).
+5. GREETINGS AND UNREQUESTED DATA RULE (STRICT): NEVER talk about, mention, or volunteer saved budgets, savings goals, transactions, or account balances UNLESS explicitly asked in the message or a tool execution result specifically provides them.
+6. Keep your responses concise, direct, and conversational. Do NOT give a massive structured list of suggestions or data breakdowns unless explicitly asked for recommendations, detailed analysis, or lists. Simply answer the specific query directly in a few natural sentences (2 to 4 sentences max).
 7. Never introduce yourself mid-conversation. Just answer naturally.
-8. If the user asks for guidance or advice and no data is available in context, gently explain they haven't recorded anything yet, but don't force a long explanation.
-9. Use natural speech transitions like "So," "Now," "I'd recommend," but only when it sounds conversational and fits the context.
-10. Keep responses warm, encouraging, and human. If the user is in a difficult situation, show genuine empathy and give a brief, supportive, and direct response.
+8. If asked for guidance or advice and no data is available in context, gently explain nothing has been recorded yet, but do not force a long explanation.
+9. Use natural speech transitions like So, Now, I would recommend, but only when it sounds conversational and fits the context.
+10. Keep responses warm, encouraging, and human. If in a difficult situation, show genuine empathy and give a brief, supportive, and direct response.
+11. NO UNPROMPTED DATA DUMP: If asking a general question, answer ONLY that question. Do NOT mention personal budgets or goals.
+12. ZERO HALLUCINATION & FACTUAL ACCURACY RULE (CRITICAL): NEVER invent, fabricate, make up, or imagine any transaction, date, store name, or amount (e.g. NEVER make up Dhaba, 1200 taka, or any item not present in database context or tool output). Strictly adhere to database evidence. If a transaction exists in context (such as 70 taka on August 4th for Breakfast), accurately confirm it. NEVER contradict database evidence or deny a transaction that exists in context.
 
 Formatting:
 - Use markdown bullet points or numbered lists only for suggestions/recommendations sections.
-- Do NOT use bold headers or colons mid-sentence — they sound robotic when read aloud.
+- Do NOT use bold headers or colons mid-sentence - they sound robotic when read aloud.
 - Write amounts fully in words, always.
 
-Important: If tool output is empty or shows no transactions, warmly tell them they haven't recorded any transactions yet and encourage them to add some.
+Important: If tool output contains transactions, warmly summarize them for the user (mentioning dates, amounts, categories, or overall sum). ONLY if tool output is completely empty and no transactions exist in the account, gently say no transactions are recorded yet.
 """
 
-    # Only inject financial context when the user is asking a real question, not greeting
+    # Determine whether user explicitly requested personal financial records or if a tool ran
+    query_lower = state['current_query'].lower()
+    user_asked_for_data = any(w in query_lower for w in [
+        'budget', 'saving', 'goal', 'my', 'balance', 'spending', 'spent',
+        'transaction', 'account', 'record', 'report', 'sheet', 'history', 'list'
+    ])
+
     tool_result = state['tool_result']
     tool_result_str = ''
     if tool_result and tool_result != 'No tool execution needed.':
         tool_result_str = f"Tool Execution Result: {json.dumps(tool_result, default=str)}"
 
-    if is_greeting:
-        user_context = f"User Query: {state['current_query']}\nDetected Intent: greeting"
+    # Only include background profile context if relevant intent, explicit user request, or tool result exists
+    should_include_profile = (
+        state['detected_intent'] not in ['general', 'greeting'] or
+        user_asked_for_data or
+        bool(tool_result_str)
+    )
+
+    if is_greeting or not should_include_profile:
+        user_context = f"User Query: {state['current_query']}\nDetected Intent: {state['detected_intent']}"
+        if tool_result_str:
+            user_context += f"\n{tool_result_str}"
     else:
         user_context = f"""User Query: {state['current_query']}
 Detected Intent: {state['detected_intent']}
@@ -275,9 +344,10 @@ Detected Intent: {state['detected_intent']}
         {"role": "system", "content": system_prompt}
     ]
     
-    # Append recent conversation history for continuity
-    for msg in state['message_history'][-5:]:
-        messages.append({"role": msg['role'], "content": msg['content']})
+    # Append session conversation history for complete memory continuity
+    if state.get('message_history'):
+        for msg in state['message_history'][-20:]:
+            messages.append({"role": msg['role'], "content": msg['content']})
 
     messages.append({"role": "user", "content": user_context})
 
