@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/services/api';
@@ -223,6 +224,7 @@ function NaturalMessageRenderer({ text, isNew }: { text: string; isNew: boolean 
 }
 
 export default function FloatingChatbot() {
+  const router = useRouter();
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
@@ -315,6 +317,13 @@ export default function FloatingChatbot() {
         ...prev,
         { role: 'assistant', content: response.data.reply },
       ]);
+
+      const targetPage = response.data.target_page || response.data.data?.target_page;
+      if (targetPage) {
+        setTimeout(() => {
+          router.push(targetPage);
+        }, 1200);
+      }
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -386,6 +395,13 @@ export default function FloatingChatbot() {
 
             const reply = response.data.reply;
             setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+
+            const targetPage = response.data.target_page || response.data.data?.target_page;
+            if (targetPage) {
+              setTimeout(() => {
+                router.push(targetPage);
+              }, 1200);
+            }
 
             speak(reply);
           } catch (error) {
@@ -613,6 +629,13 @@ export default function FloatingChatbot() {
         ...prev,
         { role: 'assistant', content: response.data.reply },
       ]);
+
+      const targetPage = response.data.target_page || response.data.data?.target_page;
+      if (targetPage) {
+        setTimeout(() => {
+          router.push(targetPage);
+        }, 1200);
+      }
     } catch (error) {
       setMessages((prev) => [
         ...prev,

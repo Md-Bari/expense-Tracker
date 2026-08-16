@@ -316,6 +316,13 @@ export default function AIChatPage() {
               },
             ]);
 
+            const targetPage = response.data.target_page || response.data.data?.target_page;
+            if (targetPage) {
+              setTimeout(() => {
+                router.push(targetPage);
+              }, 1200);
+            }
+
             speak(reply);
           } catch (error) {
             updateVoiceStatus('listening');
@@ -532,6 +539,13 @@ export default function AIChatPage() {
           data: response.data.data
         },
       ]);
+
+      const targetPage = response.data.target_page || response.data.data?.target_page;
+      if (targetPage) {
+        setTimeout(() => {
+          router.push(targetPage);
+        }, 1200);
+      }
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -576,6 +590,13 @@ export default function AIChatPage() {
           data: response.data.data,
         },
       ]);
+
+      const targetPage = response.data.target_page || response.data.data?.target_page;
+      if (targetPage) {
+        setTimeout(() => {
+          router.push(targetPage);
+        }, 1200);
+      }
     } catch (error: any) {
       setMessages((prev) => [
         ...prev,

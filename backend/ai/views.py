@@ -24,10 +24,18 @@ class AIChatView(APIView):
             # Execute the LangGraph workflow
             agent_response = run_financial_agent(request.user, query, history)
             
+            data = agent_response.get('data')
+            target_page = None
+            if isinstance(data, dict) and data.get('action') == 'navigate':
+                target_page = data.get('target_page')
+            elif agent_response.get('intent') == 'navigate':
+                target_page = agent_response.get('target_page') or '/transactions'
+
             return Response({
                 'reply': agent_response.get('result'),
                 'intent': agent_response.get('intent'),
-                'data': agent_response.get('data')
+                'target_page': target_page,
+                'data': data
             }, status=status.HTTP_200_OK)
             
         except Exception as e:

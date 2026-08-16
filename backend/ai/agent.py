@@ -48,16 +48,18 @@ Available Intents:
 2. "analytics": Month-over-month comparison, identifying wasteful category spending, listing top expenditure areas, checking expense distributions.
 3. "forecast": Predicting/forecasting next month's spending or showing savings estimates.
 4. "pdf": Generating/downloading a PDF financial statement or monthly report.
-5. "create_transaction": When the user explicitly wants to add, record, or create a transaction (e.g., "Add expense of 500 for Food today", "I earned 12000 from freelance writing").
-6. "create_savings_goal": When the user explicitly wants to create a new savings goal target (e.g., "Create a savings goal of 50000 for a new laptop by December 31st").
-7. "create_budget": When the user explicitly wants to create a new budget (e.g., "Create a budget of 2000 for Food this month", "add total budget of 50000").
-8. "expense_sheet": When the user wants to create, view, add items to, edit, or delete items from an expense sheet (e.g., "Create an expense sheet", "Add lunch 200 to my expense sheet", "Show my expense sheet", "Remove item 3 from the sheet").
-9. "general": Asking for generic budgeting tips, savings advice, or greeting.
+5. "navigate": When the user explicitly asks to open, go to, view, or navigate to a specific page or route in English or Bangla (e.g., "open transaction page", "go to budgets", "take me to reports", "ট্রানজ্যাকশন পেজে যাও", "বাজেট দেখাও", "শীটস খোলো", "এডমিন দেখাও"). Target pages: "/transactions", "/budgets", "/sheets", "/goals", "/reports", "/chat", "/dashboard", "/admin".
+6. "create_transaction": When the user explicitly wants to add, record, or fill a transaction (e.g., "Add expense of 500 for Food today", "fill transaction form", "আমি খরচ যোগ করতে চাই"). If required details (amount or category) are missing, ask guided questions to collect them.
+7. "create_savings_goal": When the user explicitly wants to create a new savings goal target (e.g., "Create a savings goal of 50000 for a new laptop by December 31st").
+8. "create_budget": When the user explicitly wants to create a new budget (e.g., "Create a budget of 2000 for Food this month", "add total budget of 50000").
+9. "expense_sheet": When the user wants to create, view, add items to, edit, or delete items from an expense sheet (e.g., "Create an expense sheet", "Add lunch 200 to my expense sheet", "Show my expense sheet", "Remove item 3 from the sheet").
+10. "general": Asking for generic budgeting tips, savings advice, or greeting.
 
 Output JSON ONLY format:
 {
-  "intent": "sql" | "analytics" | "forecast" | "pdf" | "create_transaction" | "create_savings_goal" | "create_budget" | "expense_sheet" | "general",
+  "intent": "sql" | "analytics" | "forecast" | "pdf" | "navigate" | "create_transaction" | "create_savings_goal" | "create_budget" | "expense_sheet" | "general",
   "parameters": {
+     "target_page": "/transactions" | "/budgets" | "/sheets" | "/goals" | "/reports" | "/chat" | "/dashboard" | "/admin" | null,
      "amount": float | null,
      "type": "income" | "expense" | null,
      "category_name": string | null,
@@ -137,7 +139,28 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
     result = None
     
     try:
-        if intent == 'sql':
+        if intent == 'navigate':
+            target_page = params.get('target_page')
+            query_l = state['current_query'].lower()
+            if not target_page:
+                if 'transaction' in query_l or 'লেনদেন' in query_l or 'ট্রানজ্যাকশন' in query_l:
+                    target_page = '/transactions'
+                elif 'budget' in query_l or 'বাজেট' in query_l:
+                    target_page = '/budgets'
+                elif 'sheet' in query_l or 'শীট' in query_l:
+                    target_page = '/sheets'
+                elif 'goal' in query_l or 'saving' in query_l or 'সঞ্চয়' in query_l:
+                    target_page = '/goals'
+                elif 'report' in query_l or 'রিপোর্ট' in query_l or 'pdf' in query_l:
+                    target_page = '/reports'
+                elif 'chat' in query_l or 'কথা' in query_l or 'অ্যাসিস্ট্যান্ট' in query_l:
+                    target_page = '/chat'
+                elif 'admin' in query_l or 'এডমিন' in query_l:
+                    target_page = '/admin'
+                else:
+                    target_page = '/dashboard'
+            result = {'action': 'navigate', 'target_page': target_page}
+        elif intent == 'sql':
             result = execute_safe_financial_query(user, params)
         elif intent == 'analytics':
             # Check if MoM comparison is needed
