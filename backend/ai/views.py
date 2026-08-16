@@ -26,8 +26,13 @@ class AIChatView(APIView):
             
             data = agent_response.get('data')
             target_page = None
-            if isinstance(data, dict) and data.get('action') == 'navigate':
-                target_page = data.get('target_page')
+            form_action = None
+
+            if isinstance(data, dict):
+                if data.get('target_page'):
+                    target_page = data.get('target_page')
+                if data.get('form_action'):
+                    form_action = data.get('form_action')
             elif agent_response.get('intent') == 'navigate':
                 target_page = agent_response.get('target_page') or '/transactions'
 
@@ -35,6 +40,7 @@ class AIChatView(APIView):
                 'reply': agent_response.get('result'),
                 'intent': agent_response.get('intent'),
                 'target_page': target_page,
+                'form_action': form_action,
                 'data': data
             }, status=status.HTTP_200_OK)
             

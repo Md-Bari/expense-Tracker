@@ -396,11 +396,16 @@ export default function FloatingChatbot() {
             const reply = response.data.reply;
             setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
 
+            const formAction = response.data.form_action || response.data.data?.form_action;
+            if (formAction && typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('ai_form_action', { detail: formAction }));
+            }
+
             const targetPage = response.data.target_page || response.data.data?.target_page;
             if (targetPage) {
               setTimeout(() => {
                 router.push(targetPage);
-              }, 1200);
+              }, 800);
             }
 
             speak(reply);
@@ -630,11 +635,16 @@ export default function FloatingChatbot() {
         { role: 'assistant', content: response.data.reply },
       ]);
 
+      const formAction = response.data.form_action || response.data.data?.form_action;
+      if (formAction && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ai_form_action', { detail: formAction }));
+      }
+
       const targetPage = response.data.target_page || response.data.data?.target_page;
       if (targetPage) {
         setTimeout(() => {
           router.push(targetPage);
-        }, 1200);
+        }, 800);
       }
     } catch (error) {
       setMessages((prev) => [

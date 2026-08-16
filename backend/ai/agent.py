@@ -182,11 +182,66 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
             end_date_str = params.get('end_date') or str(datetime.date.today())
             result = trigger_report_generation(user, start_date_str, end_date_str)
         elif intent == 'create_transaction':
-            result = create_transaction_tool(user, params)
+            target_page = '/transactions'
+            active_field = 'amount'
+            if params.get('amount') and not params.get('category_name'):
+                active_field = 'category'
+            elif params.get('amount') and params.get('category_name') and not params.get('description'):
+                active_field = 'description'
+
+            form_action = {
+                'open_modal': True,
+                'modal_type': 'transaction',
+                'active_field': active_field,
+                'fields': {
+                    'amount': params.get('amount'),
+                    'type': params.get('type') or 'expense',
+                    'category': params.get('category_name'),
+                    'description': params.get('description'),
+                    'date': params.get('date') or str(datetime.date.today())
+                }
+            }
+            tool_res = create_transaction_tool(user, params)
+            result = {
+                'tool_output': tool_res,
+                'target_page': target_page,
+                'form_action': form_action
+            }
         elif intent == 'create_savings_goal':
-            result = create_savings_goal_tool(user, params)
+            target_page = '/goals'
+            form_action = {
+                'open_modal': True,
+                'modal_type': 'goal',
+                'active_field': 'name' if not params.get('name') else ('target_amount' if not params.get('target_amount') else 'target_date'),
+                'fields': {
+                    'name': params.get('name'),
+                    'target_amount': params.get('target_amount'),
+                    'target_date': params.get('target_date')
+                }
+            }
+            tool_res = create_savings_goal_tool(user, params)
+            result = {
+                'tool_output': tool_res,
+                'target_page': target_page,
+                'form_action': form_action
+            }
         elif intent == 'create_budget':
-            result = create_budget_tool(user, params)
+            target_page = '/budgets'
+            form_action = {
+                'open_modal': True,
+                'modal_type': 'budget',
+                'active_field': 'category' if not params.get('category_name') else 'amount',
+                'fields': {
+                    'category': params.get('category_name'),
+                    'amount': params.get('amount')
+                }
+            }
+            tool_res = create_budget_tool(user, params)
+            result = {
+                'tool_output': tool_res,
+                'target_page': target_page,
+                'form_action': form_action
+            }
         elif intent == 'expense_sheet':
             result = manage_expense_sheet_tool(user, params, state['current_query'])
         else:

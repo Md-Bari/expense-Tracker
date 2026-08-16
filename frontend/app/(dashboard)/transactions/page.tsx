@@ -53,6 +53,7 @@ export default function TransactionsPage() {
   // Dialog & Modal state
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [activeField, setActiveField] = useState<string | null>(null);
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -63,6 +64,46 @@ export default function TransactionsPage() {
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrencePeriod, setRecurrencePeriod] = useState('monthly');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+
+  // Fetch categories
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await api.get('/transactions/categories/');
+      return res.data;
+    },
+    enabled: isAuthenticated,
+  });
+
+  // AI Live Form Filler Listener
+  useEffect(() => {
+    const handleAiFormAction = (e: any) => {
+      const detail = e.detail || {};
+      if (detail.open_modal || detail.modal_type === 'transaction') {
+        setIsOpen(true);
+      }
+      if (detail.fields) {
+        if (detail.fields.amount !== undefined && detail.fields.amount !== null) {
+          setAmount(detail.fields.amount.toString());
+        }
+        if (detail.fields.type) setType(detail.fields.type);
+        if (detail.fields.description) setDescription(detail.fields.description);
+        if (detail.fields.date) setDate(detail.fields.date);
+        if (detail.fields.category) {
+          const match = categories?.find((c: any) => c.name.toLowerCase() === detail.fields.category.toLowerCase());
+          if (match) setCategory(match.id.toString());
+        }
+      }
+      if (detail.active_field) {
+        setActiveField(detail.active_field);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ai_form_action', handleAiFormAction);
+      return () => window.removeEventListener('ai_form_action', handleAiFormAction);
+    }
+  }, [categories]);
   
   // OCR processing state
   const [ocrLoading, setOcrLoading] = useState(false);
@@ -79,16 +120,6 @@ export default function TransactionsPage() {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, router]);
-
-  // Fetch categories
-  const { data: categories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const res = await api.get('/transactions/categories/');
-      return res.data;
-    },
-    enabled: isAuthenticated,
-  });
 
   // Fetch transactions
   const { data: transactions, isLoading: txLoading } = useQuery({
@@ -696,7 +727,11 @@ export default function TransactionsPage() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-indigo-500 transition-all"
+                  className={`w-full bg-slate-950/60 border rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none transition-all ${
+                    activeField === 'amount'
+                      ? 'border-[#0da594] ring-2 ring-[#0da594] bg-[#0da594]/15 shadow-[0_0_20px_rgba(13,165,148,0.4)] animate-pulse'
+                      : 'border-slate-800 focus:border-[#0da594]'
+                  }`}
                 />
               </div>
 
@@ -708,7 +743,7 @@ export default function TransactionsPage() {
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all"
+                    className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none focus:border-[#0da594] transition-all"
                   />
                 </div>
 
@@ -718,7 +753,11 @@ export default function TransactionsPage() {
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all appearance-none"
+                      className={`w-full bg-slate-950/60 border rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none transition-all appearance-none ${
+                        activeField === 'category'
+                          ? 'border-[#0da594] ring-2 ring-[#0da594] bg-[#0da594]/15 shadow-[0_0_20px_rgba(13,165,148,0.4)] animate-pulse'
+                          : 'border-slate-800 focus:border-[#0da594]'
+                      }`}
                     >
                       {categories?.map((cat: any) => (
                         <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -727,7 +766,7 @@ export default function TransactionsPage() {
                     <button
                       type="button"
                       onClick={() => setIsAddingCategory(true)}
-                      className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold"
+                      className="text-[10px] text-[#0da594] hover:underline font-semibold"
                     >
                       + Create Custom Category
                     </button>
@@ -755,7 +794,7 @@ export default function TransactionsPage() {
                     />
                     <button
                       onClick={handleAddCategorySubmit}
-                      className="px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
+                      className="px-3 rounded-lg bg-[#0da594] hover:bg-[#087f73] text-white text-xs font-semibold"
                     >
                       Add
                     </button>
@@ -776,7 +815,11 @@ export default function TransactionsPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="what was this transaction for?"
                   rows={3}
-                  className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none focus:border-indigo-500 transition-all resize-none"
+                  className={`w-full bg-slate-950/60 border rounded-xl py-2.5 px-4 text-xs text-white focus:outline-none transition-all resize-none ${
+                    activeField === 'description'
+                      ? 'border-[#0da594] ring-2 ring-[#0da594] bg-[#0da594]/15 shadow-[0_0_20px_rgba(13,165,148,0.4)] animate-pulse'
+                      : 'border-slate-800 focus:border-[#0da594]'
+                  }`}
                 />
               </div>
 
