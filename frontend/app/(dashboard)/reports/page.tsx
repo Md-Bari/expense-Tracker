@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 
@@ -21,6 +22,7 @@ export default function ReportsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { t, formatDate } = useLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
   const [startDate, setStartDate] = useState(
@@ -106,18 +108,18 @@ export default function ReportsPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white">Financial Reports</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-white">{t('reports.title', 'Financial Reports')}</h1>
               <p className="text-sm text-slate-400 mt-1">
-                Compile and export your transactions, trends, and budget performance metrics as PDFs.
+                {t('reports.subtitle', 'Generate and download detailed PDF statements and breakdown reports.')}
               </p>
             </div>
             
             <button
               onClick={() => setIsOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
             >
               <Plus className="h-4.5 w-4.5" />
-              <span>Compile Report</span>
+              <span>{t('reports.generateBtn', 'Compile Report')}</span>
             </button>
           </div>
 

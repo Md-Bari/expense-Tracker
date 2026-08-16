@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 
@@ -28,6 +29,7 @@ export default function TransactionsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { t, formatCurrency, toBanglaNumeral, formatDate } = useLanguage();
 
   // Search & Filter state
   const [search, setSearch] = useState('');
@@ -264,58 +266,58 @@ export default function TransactionsPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">Transactions</h1>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{t('trans.title', 'Transactions')}</h1>
               <p className="text-xs md:text-sm text-slate-400 mt-1">
-                Maintain and record your daily revenues and expenditures.
+                {t('trans.subtitle', 'Maintain and record your daily revenues and expenditures.')}
               </p>
             </div>
             
             <button
               onClick={() => handleOpen()}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs md:text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center gap-2 shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs md:text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
               <Plus className="h-4.5 w-4.5" />
-              <span>Record Transaction</span>
+              <span>{t('trans.addBtn', 'Record Transaction')}</span>
             </button>
           </div>
 
           {/* Filtering panels */}
           <div className="glass-panel p-4 md:p-5 rounded-2xl border border-slate-800 grid grid-cols-2 md:flex md:flex-wrap gap-3 md:gap-4 items-end">
             <div className="col-span-2 md:flex-1 md:min-w-[200px] space-y-1">
-              <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Search</label>
+              <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">{t('trans.colDescription', 'Search')}</label>
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-3 text-slate-500" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="search description..."
+                  placeholder={t('trans.searchPlaceholder', 'search description...')}
                   className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-xs focus:outline-none focus:border-indigo-500 text-white placeholder-slate-600"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Type</label>
+              <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">{t('trans.colType', 'Type')}</label>
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-indigo-500 text-white"
               >
-                <option value="">All</option>
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
+                <option value="">{t('trans.allTypes', 'All')}</option>
+                <option value="income">{t('trans.typeIncome', 'Income')}</option>
+                <option value="expense">{t('trans.typeExpense', 'Expense')}</option>
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Category</label>
+              <label className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">{t('trans.colCategory', 'Category')}</label>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-indigo-500 text-white"
               >
-                <option value="">All Categories</option>
+                <option value="">{t('trans.allCategories', 'All Categories')}</option>
                 {categories?.map((cat: any) => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
@@ -350,12 +352,12 @@ export default function TransactionsPage() {
               <table className="w-full text-left border-collapse text-xs min-w-full">
                 <thead>
                   <tr className="bg-slate-900/50 border-b border-slate-850 text-slate-400 uppercase tracking-wider text-[10px] font-semibold">
-                    <th className="py-3.5 px-6">Date</th>
-                    <th className="py-3.5 px-6">Category</th>
-                    <th className="py-3.5 px-6">Description</th>
-                    <th className="py-3.5 px-6">Type</th>
-                    <th className="py-3.5 px-6">Amount</th>
-                    <th className="py-3.5 px-6 text-center">Actions</th>
+                    <th className="py-3.5 px-6">{t('trans.colDate', 'Date')}</th>
+                    <th className="py-3.5 px-6">{t('trans.colCategory', 'Category')}</th>
+                    <th className="py-3.5 px-6">{t('trans.colDescription', 'Description')}</th>
+                    <th className="py-3.5 px-6">{t('trans.colType', 'Type')}</th>
+                    <th className="py-3.5 px-6">{t('trans.colAmount', 'Amount')}</th>
+                    <th className="py-3.5 px-6 text-center">{t('trans.colActions', 'Actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-850 text-slate-300">
@@ -363,7 +365,7 @@ export default function TransactionsPage() {
                     transactions.results.map((tx: any) => (
                       <tr key={tx.id} className="hover:bg-slate-900/25 transition-colors">
                         <td className="py-3.5 px-6 font-medium text-slate-400 text-xs whitespace-nowrap">
-                          {tx.date}
+                          {formatDate(tx.date)}
                         </td>
                         <td className="py-3.5 px-6">
                           <div className="flex items-center gap-2">
@@ -392,23 +394,23 @@ export default function TransactionsPage() {
                                 : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                             }`}
                           >
-                            {tx.type}
+                            {tx.type === 'income' ? t('trans.typeIncome', 'Income') : t('trans.typeExpense', 'Expense')}
                           </span>
                         </td>
                         <td className={`py-3.5 px-6 font-bold text-xs whitespace-nowrap ${tx.type === 'income' ? 'text-emerald-400' : 'text-slate-100'}`}>
-                          {tx.type === 'income' ? '+' : '-'}৳{parseFloat(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                         </td>
                         <td className="py-3.5 px-6 text-center space-x-2">
                           <button
                             onClick={() => handleOpen(tx)}
-                            className="p-1 rounded hover:bg-slate-800 text-slate-500 hover:text-white"
+                            className="p-1 rounded hover:bg-slate-800 text-slate-500 hover:text-white cursor-pointer"
                             title="Edit"
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => deleteTxMutation.mutate(tx.id)}
-                            className="p-1 rounded hover:bg-rose-950/30 text-slate-500 hover:text-rose-400"
+                            className="p-1 rounded hover:bg-rose-950/30 text-slate-500 hover:text-rose-400 cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -419,7 +421,7 @@ export default function TransactionsPage() {
                   ) : (
                     <tr>
                       <td colSpan={6} className="text-center py-12 text-slate-500 font-medium">
-                        No transactions recorded. Click Record Transaction to begin.
+                        {t('trans.noFound', 'No transactions recorded.')}
                       </td>
                     </tr>
                   )}
@@ -455,13 +457,13 @@ export default function TransactionsPage() {
                               : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                           }`}
                         >
-                          {tx.type}
+                          {tx.type === 'income' ? t('trans.typeIncome', 'Income') : t('trans.typeExpense', 'Expense')}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <span className={`font-black text-sm ${tx.type === 'income' ? 'text-emerald-400' : 'text-slate-100'}`}>
-                          {tx.type === 'income' ? '+' : '-'}৳{parseFloat(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                         </span>
                         <button
                           onClick={() => toggleExpand(tx.id)}

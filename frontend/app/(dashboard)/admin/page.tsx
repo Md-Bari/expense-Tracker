@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/services/api';
 
 import { 
@@ -46,6 +47,7 @@ interface Plan {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { t, formatCurrency, toBanglaNumeral } = useLanguage();
 
   // Navigation / Tabs state
   const [activeTab, setActiveTab] = useState<'users' | 'create-admin' | 'plans'>('users');
@@ -302,7 +304,7 @@ export default function AdminDashboardPage() {
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-indigo-950 border border-indigo-900 text-indigo-400 text-[10px] font-bold tracking-wider uppercase">
               System Console
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-white">Super Admin Dashboard</h1>
+            <h1 className="text-2xl font-black tracking-tight text-white">{t('admin.title', 'Super Admin Dashboard')}</h1>
           </div>
           
           {/* Tab Buttons bar */}

@@ -92,8 +92,9 @@ services:
     command: npm run dev
     volumes:
       - ./frontend:/app
-      # Exclude node_modules from volume mount to prevent host OS clashes
+      # Exclude node_modules and .next from volume mount to prevent host OS clashes
       - /app/node_modules
+      - /app/.next
     ports:
       - "3009:3009"
     environment:

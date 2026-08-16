@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 import FloatingChatbot from '@/components/FloatingChatbot';
 
 function FloatingChatbotWrapper() {
@@ -26,10 +27,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {children}
-        <FloatingChatbotWrapper />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          {children}
+          <FloatingChatbotWrapper />
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

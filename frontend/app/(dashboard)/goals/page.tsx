@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 
@@ -13,6 +14,7 @@ export default function SavingsGoalsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { t, formatCurrency, toBanglaNumeral, formatDate } = useLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isFundOpen, setIsFundOpen] = useState(false);
@@ -129,18 +131,18 @@ export default function SavingsGoalsPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white">Savings Goals</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-white">{t('goals.title', 'Savings Goals')}</h1>
               <p className="text-sm text-slate-400 mt-1">
-                Configure future targets and accumulate funds towards them.
+                {t('goals.subtitle', 'Configure future targets and accumulate funds towards them.')}
               </p>
             </div>
             
             <button
               onClick={() => setIsOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
             >
               <Plus className="h-4.5 w-4.5" />
-              <span>Create Goal</span>
+              <span>{t('goals.addBtn', 'Create Goal')}</span>
             </button>
           </div>
 

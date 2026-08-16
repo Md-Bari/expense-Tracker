@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 
@@ -40,6 +41,7 @@ export default function ExpenseSheetsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { t, formatCurrency, toBanglaNumeral, formatDate } = useLanguage();
 
   // Sheet selection
   const [activeSheetId, setActiveSheetId] = useState<number | null>(null);
@@ -203,10 +205,10 @@ export default function ExpenseSheetsPage() {
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <FileSpreadsheet className="h-8 w-8 text-emerald-400" />
-            Expense Sheets
+            {t('sheets.title', 'Expense Sheets')}
           </h1>
           <p className="text-slate-400 mt-1">
-            Plan and organize your expenses before committing them as transactions.
+            {t('sheets.subtitle', 'Upload and manage Excel/CSV expense sheets effortlessly.')}
           </p>
         </div>
 

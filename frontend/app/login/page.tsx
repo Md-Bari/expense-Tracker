@@ -4,11 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import LanguageToggle from '@/components/LanguageToggle';
 import { Bot, KeyRound, User, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -40,6 +43,11 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-950 px-4">
+      {/* Top right language switcher */}
+      <div className="absolute top-6 right-6 z-20">
+        <LanguageToggle />
+      </div>
+
       {/* Background glow graphics */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-indigo-600/10 blur-[128px] pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-purple-600/10 blur-[128px] pointer-events-none"></div>
@@ -49,8 +57,8 @@ export default function LoginPage() {
           <div className="mx-auto h-12 w-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-indigo-500/20 mb-3">
             A
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">Welcome back to Aura</h2>
-          <p className="text-sm text-slate-400 mt-1.5">Your intelligent wealth companion</p>
+          <h2 className="text-2xl font-bold tracking-tight text-white">{t('auth.loginTitle', 'Welcome back to Aura')}</h2>
+          <p className="text-sm text-slate-400 mt-1.5">{t('landing.heroTitle', 'Intelligent Wealth & Expense Tracking')}</p>
         </div>
 
         {/* Card panel */}

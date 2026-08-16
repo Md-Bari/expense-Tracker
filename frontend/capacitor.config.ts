@@ -7,9 +7,9 @@ const config: CapacitorConfig = {
   // Server URL mode: load the live running web app instead of static files.
   // This means no static export is needed — the web version stays untouched.
   server: {
-    url: 'https://joshua-intervention-offices-acquired.trycloudflare.com',
+    url: 'http://10.0.2.2:3009',
     cleartext: true,
-    androidScheme: 'https',
+    androidScheme: 'http',
   },
   android: {
     allowMixedContent: true,

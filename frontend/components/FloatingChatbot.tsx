@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Sparkles, X, Send, Bot, Mic } from 'lucide-react';
@@ -223,11 +224,21 @@ function NaturalMessageRenderer({ text, isNew }: { text: string; isNew: boolean 
 
 export default function FloatingChatbot() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  
+  const SAMPLE_PROMPTS = [
+    t('chat.suggestion1', "How can I increase my savings rate this month?"),
+    t('chat.suggestion2', "Summarize my highest spending category."),
+    t('chat.suggestion3', "Give me a budget reduction strategy."),
+  ];
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hi there! I am Aura, your virtual wealth manager. Ask me questions about your budgets, recent transactions, or pick one of these sample queries:",
+      content: language === 'bn' 
+        ? "হ্যালো! আমি ঔরা, আপনার ব্যক্তিগত ভার্চুয়াল ওয়েল্থ ম্যানেজার। আপনার বাজেট, সাম্প্রতিক লেনদেন বা সঞ্চয় সম্পর্কিত যে কোনো প্রশ্ন জিজ্ঞাসা করতে পারেন।"
+        : "Hi there! I am Aura, your virtual wealth manager. Ask me questions about your budgets, recent transactions, or pick one of these sample queries:",
     },
   ]);
   const [input, setInput] = useState('');
@@ -671,10 +682,10 @@ export default function FloatingChatbot() {
                   <Bot className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-white leading-none">Aura Advisor</h3>
+                  <h3 className="text-xs font-bold text-white leading-none">{t('chat.title', 'Aura Advisor')}</h3>
                   <span className="text-[9px] text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
                     <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>Ready to assist</span>
+                    <span>{t('chat.thinking') ? t('chat.thinking').replace('...', '') : 'Ready to assist'}</span>
                   </span>
                 </div>
               </div>
@@ -761,7 +772,7 @@ export default function FloatingChatbot() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask a query..."
+                  placeholder={t('chat.placeholder', 'Ask Aura about your expenses, budgets, or savings tips...')}
                   disabled={loading}
                   className="w-full bg-slate-900 border border-slate-850 rounded-xl py-2 pl-4 pr-10 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all disabled:opacity-50"
                 />
