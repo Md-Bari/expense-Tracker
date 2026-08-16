@@ -813,19 +813,75 @@ export default function FloatingChatbot() {
         )}
       </AnimatePresence>
 
+      {/* Persistent Bottom-Middle Voice Assistant Animation Bar */}
+      <AnimatePresence>
+        {isVoiceActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.85 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-[calc(50%+8rem)] z-50 flex items-center gap-4 px-6 py-3.5 bg-[#052322]/95 border border-[#0da594]/50 backdrop-blur-xl rounded-full shadow-[0_10px_40px_rgba(13,165,148,0.4)] text-white"
+          >
+            {/* 3D Voice Orb */}
+            <div 
+              className="shrink-0 cursor-pointer" 
+              onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
+              title={voiceStatus === 'speaking' ? "Tap to stop speaking" : "Voice Orb"}
+            >
+              <ThreeDVoiceOrb status={voiceStatus} size="sm" />
+            </div>
+
+            {/* Status & Speech Info */}
+            <div className="flex flex-col min-w-[150px] max-w-[260px]">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[#0da594] animate-pulse"></span>
+                <span className="text-xs font-black tracking-wider uppercase text-white">Aura Voice</span>
+                <span className="text-[10px] text-[#0da594] font-bold uppercase tracking-widest bg-[#0da594]/20 px-2 py-0.5 rounded-full border border-[#0da594]/30">
+                  {voiceStatus}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 truncate mt-0.5 font-medium">
+                {voiceStatus === 'listening' && (language === 'bn' ? "কথা শুনছি... বলুন" : "Continuous listening... Speak your query")}
+                {voiceStatus === 'thinking' && (language === 'bn' ? "প্রসেসিং হচ্ছে..." : "Aura is analyzing...")}
+                {voiceStatus === 'speaking' && (language === 'bn' ? "কথা বলছি... (থামাতে ট্যাপ করুন)" : "Speaking... (Tap orb to pause)")}
+                {voiceStatus === 'idle' && (language === 'bn' ? "প্রস্তুত" : "Ready")}
+              </p>
+            </div>
+
+            {/* Micro Waveform Visualizer */}
+            <div className="flex items-center gap-1 h-6 px-1">
+              <span className={`w-1 rounded-full bg-[#0da594] transition-all duration-300 ${voiceStatus === 'speaking' || voiceStatus === 'listening' ? 'h-5 animate-pulse' : 'h-2'}`}></span>
+              <span className={`w-1 rounded-full bg-[#0da594] transition-all duration-300 ${voiceStatus === 'speaking' || voiceStatus === 'listening' ? 'h-3 animate-pulse delay-75' : 'h-1.5'}`}></span>
+              <span className={`w-1 rounded-full bg-[#0da594] transition-all duration-300 ${voiceStatus === 'speaking' || voiceStatus === 'listening' ? 'h-6 animate-pulse delay-150' : 'h-3'}`}></span>
+              <span className={`w-1 rounded-full bg-[#0da594] transition-all duration-300 ${voiceStatus === 'speaking' || voiceStatus === 'listening' ? 'h-4 animate-pulse delay-100' : 'h-2'}`}></span>
+            </div>
+
+            {/* End Session Button */}
+            <button
+              onClick={toggleVoice}
+              className="p-2 rounded-full bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/30 text-rose-300 hover:text-white transition-all cursor-pointer shrink-0 ml-1"
+              title="Close Voice Session"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Floating Toggle Button */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white rounded-full flex items-center justify-center shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/40 relative cursor-pointer border border-indigo-400/20"
+        className="w-14 h-14 bg-gradient-to-tr from-[#0da594] to-[#087f73] text-white rounded-full flex items-center justify-center shadow-xl shadow-teal-500/30 hover:shadow-teal-500/40 relative cursor-pointer border border-teal-400/20"
       >
         {isOpen ? (
           <X className="h-6 w-6" />
         ) : (
           <>
             <MessageSquare className="h-6 w-6" />
-            <Sparkles className="h-3 w-3 text-indigo-200 absolute top-3.5 right-3.5 animate-pulse" />
+            <Sparkles className="h-3 w-3 text-teal-200 absolute top-3.5 right-3.5 animate-pulse" />
           </>
         )}
       </motion.button>
