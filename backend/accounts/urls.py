@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import RegisterView, UserProfileView
 from django.http import JsonResponse
@@ -17,9 +17,9 @@ def auth_root(request):
 
 urlpatterns = [
     path('', auth_root),
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('profile/', UserProfileView.as_view(), name='profile'),
+    re_path(r'^register/?$', RegisterView.as_view(), name='register'),
+    re_path(r'^login/?$', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    re_path(r'^refresh/?$', TokenRefreshView.as_view(), name='token_refresh'),
+    re_path(r'^profile/?$', UserProfileView.as_view(), name='profile'),
 ]
 

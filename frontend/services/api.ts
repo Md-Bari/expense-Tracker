@@ -1,25 +1,24 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const getApiUrl = () => {
-  if (typeof window !== 'undefined' && window.location.hostname === '10.0.2.2') {
-    return 'http://10.0.2.2:8007/api';
+export const getApiUrl = () => {
+  if (typeof window !== 'undefined') {
+    return '/api';
   }
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8007/api';
 };
 
-const API_URL = getApiUrl();
-
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add access token to all outgoing requests
+// Add access token and dynamic baseURL to all outgoing requests
 api.interceptors.request.use(
   (config) => {
+    config.baseURL = getApiUrl();
     const token = Cookies.get('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -42,7 +41,7 @@ api.interceptors.response.use(
           throw new Error('No refresh token found');
         }
 
-        const response = await axios.post(`${API_URL}/auth/refresh/`, {
+        const response = await axios.post(`${getApiUrl()}/auth/refresh/`, {
           refresh: refreshToken,
         });
 

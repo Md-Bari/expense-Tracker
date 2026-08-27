@@ -11,7 +11,8 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-default-key-fo
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,backend,10.10.33.26,10.0.2.2').split(',')
+ALLOWED_HOSTS = ['*'] if DEBUG else os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,backend,10.10.33.26,10.0.2.2').split(',')
+APPEND_SLASH = False
 
 # Application definition
 INSTALLED_APPS = [
@@ -171,6 +172,7 @@ ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', '21m00Tcm4TlvDq8ikWA
 
 # Celery Beat Periodic Tasks
 try:
+    # pyrefly: ignore [missing-import]
     from celery.schedules import crontab
     CELERY_BEAT_SCHEDULE = {
         'process-recurring-transactions-daily': {

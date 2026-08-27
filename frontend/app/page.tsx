@@ -56,6 +56,14 @@ export default function LandingPage() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Auto-play hero slider: change one by one automatically every 5 seconds
+  useEffect(() => {
+    const slideTimer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % 3);
+    }, 5000);
+    return () => clearInterval(slideTimer);
+  }, []);
+
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400);
     window.addEventListener('scroll', onScroll);
@@ -420,13 +428,14 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#052322] via-[#052322]/85 lg:via-[#052322]/45 to-transparent"></div>
         </div>
 
-        {/* Slide Indicators on Right */}
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-30">
+        {/* Slide Indicators on Right (Hidden on mobile, visible on desktop) */}
+        <div className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 flex-col gap-3 z-30">
           {HERO_SLIDES.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setActiveSlide(idx)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all border ${
+              aria-label={`Slide ${idx + 1}`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all border cursor-pointer ${
                 activeSlide === idx
                   ? 'bg-[#0da594] border-[#0da594] text-white scale-110 shadow-lg'
                   : 'bg-white border-slate-200 text-[#052322] hover:bg-slate-100'
