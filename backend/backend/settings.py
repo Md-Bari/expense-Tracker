@@ -163,6 +163,7 @@ CELERY_TIMEZONE = TIME_ZONE
 
 # Groq API Config
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+GROQ_MODEL = os.environ.get('GROQ_MODEL', 'groq/compound-mini')
 
 # ElevenLabs API Config
 ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', '')

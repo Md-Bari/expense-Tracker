@@ -27,6 +27,8 @@ import {
   Play,
   Calendar,
   User,
+  Menu,
+  X,
 } from 'lucide-react';
 
 interface Plan {
@@ -52,12 +54,24 @@ export default function LandingPage() {
   const [isTypingDemo, setIsTypingDemo] = useState(false);
   const [demoChatHistory, setDemoChatHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string; visual?: React.ReactNode }>>([]);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Close mobile navigation menu on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileMenuOpen]);
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -281,13 +295,24 @@ export default function LandingPage() {
       {/* Header Navigation */}
       <header className="sticky top-0 z-40 w-full bg-[#052322] border-b border-teal-950/50 shadow-md">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-            <svg className="w-8 h-8 text-[#0da594]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="14" width="4" height="6" rx="1" fill="currentColor" />
-              <rect x="10" y="8" width="4" height="12" rx="1" fill="currentColor" />
-              <rect x="17" y="3" width="4" height="17" rx="1" fill="currentColor" />
-            </svg>
-            <span className="font-extrabold text-2xl tracking-tight text-white">Aura AI</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              className="lg:hidden p-2 rounded-xl bg-[#072e2c] text-slate-300 hover:text-white border border-teal-900/50 active:scale-95 transition-all cursor-pointer"
+              aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5 text-[#0da594]" /> : <Menu className="h-5 w-5" />}
+            </button>
+
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
+              <svg className="w-8 h-8 text-[#0da594]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="14" width="4" height="6" rx="1" fill="currentColor" />
+                <rect x="10" y="8" width="4" height="12" rx="1" fill="currentColor" />
+                <rect x="17" y="3" width="4" height="17" rx="1" fill="currentColor" />
+              </svg>
+              <span className="font-extrabold text-2xl tracking-tight text-white">Aura AI</span>
+            </div>
           </div>
 
           <nav className="hidden lg:flex items-center gap-8 text-[13px] font-bold text-white/90">
@@ -304,16 +329,53 @@ export default function LandingPage() {
             {authLoading ? (
               <Loader2 className="h-4 w-4 animate-spin text-[#0da594]" />
             ) : isAuthenticated ? (
-              <button onClick={() => router.push('/dashboard')} className="px-6 py-3 text-xs font-extrabold bg-[#0da594] text-white rounded-md hover:bg-[#087f73] transition-all cursor-pointer">
+              <button onClick={() => router.push('/dashboard')} className="hidden sm:inline-flex px-6 py-3 text-xs font-extrabold bg-[#0da594] text-white rounded-md hover:bg-[#087f73] transition-all cursor-pointer">
                 {t('landing.goToDashboard', 'Go to Dashboard')}
               </button>
             ) : (
-              <button onClick={() => router.push('/register')} className="px-6 py-3 text-xs font-extrabold bg-[#0da594] text-white rounded-md hover:bg-[#087f73] transition-all cursor-pointer">
+              <button onClick={() => router.push('/register')} className="hidden sm:inline-flex px-6 py-3 text-xs font-extrabold bg-[#0da594] text-white rounded-md hover:bg-[#087f73] transition-all cursor-pointer">
                 {t('landing.getStarted', 'Get Started Free')}
               </button>
             )}
           </div>
         </div>
+
+        {/* Mobile Slide-Out Drawer Navigation */}
+        {isMobileMenuOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="fixed top-[113px] left-0 right-0 z-50 bg-[#041a19] border-b border-teal-950/80 p-6 flex flex-col gap-4 shadow-2xl lg:hidden max-h-[calc(100vh-120px)] overflow-y-auto">
+              <nav className="flex flex-col gap-3 font-semibold text-slate-200 text-sm border-b border-teal-950/60 pb-4">
+                <a href="#" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#0da594] py-1.5 transition-colors">{t('landing.navHome', 'Home')}</a>
+                <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#0da594] py-1.5 transition-colors">{t('landing.navAbout', 'About Us')}</a>
+                <a href="#demo" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#0da594] py-1.5 transition-colors">{t('landing.navServices', 'Services')}</a>
+                <a href="#video" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#0da594] py-1.5 transition-colors">{t('landing.navPages', 'Pages')}</a>
+                <a href="#blog" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#0da594] py-1.5 transition-colors">{t('landing.navBlog', 'Blog')}</a>
+                <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-[#0da594] py-1.5 transition-colors">{t('landing.navContact', 'Contact')}</a>
+              </nav>
+              <div className="flex flex-col gap-3 pt-2">
+                {isAuthenticated ? (
+                  <button onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }} className="w-full py-3 text-center text-xs font-extrabold bg-[#0da594] text-white rounded-lg hover:bg-[#087f73] transition-all cursor-pointer">
+                    {t('landing.goToDashboard', 'Go to Dashboard')}
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={() => { setIsMobileMenuOpen(false); router.push('/login'); }} className="w-full py-3 text-center text-xs font-bold bg-[#072e2c] border border-teal-900/60 text-white rounded-lg hover:bg-[#0a3f3c] transition-all cursor-pointer">
+                      {t('landing.login', 'Log In')}
+                    </button>
+                    <button onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }} className="w-full py-3 text-center text-xs font-extrabold bg-[#0da594] text-white rounded-lg hover:bg-[#087f73] transition-all cursor-pointer">
+                      {t('landing.getStarted', 'Get Started Free')}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </header>
 
       {/* ─── HERO SECTION WITH INTERACTIVE SLIDER ──────────────── */}

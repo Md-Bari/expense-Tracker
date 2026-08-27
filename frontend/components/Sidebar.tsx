@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import LanguageToggle from '@/components/LanguageToggle';
 import { api } from '@/services/api';
 import {
@@ -28,7 +29,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { t, language } = useLanguage();
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const { theme, toggleTheme } = useTheme();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Close mobile drawer on route change
@@ -36,25 +37,16 @@ export default function Sidebar() {
     setIsMobileOpen(false);
   }, [pathname]);
 
+  // Close mobile drawer on Escape key press
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
-    if (savedTheme === 'light') {
-      setTheme('light');
-      document.body.classList.add('light');
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    if (theme === 'dark') {
-      setTheme('light');
-      document.body.classList.add('light');
-      localStorage.setItem('theme', 'light');
-    } else {
-      setTheme('dark');
-      document.body.classList.remove('light');
-      localStorage.setItem('theme', 'dark');
-    }
-  };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileOpen) {
+        setIsMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileOpen]);
 
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
@@ -97,11 +89,12 @@ export default function Sidebar() {
       <div className="md:hidden flex items-center justify-between p-4 bg-[#052322]/95 backdrop-blur-md border-b border-teal-950/60 sticky top-0 z-40 w-full">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsMobileOpen(true)}
-            className="p-2 rounded-xl bg-[#072e2c] text-slate-300 hover:text-white border border-teal-900/50 active:scale-95 transition-all"
-            aria-label="Open Navigation Menu"
+            onClick={() => setIsMobileOpen((prev) => !prev)}
+            className="p-2 rounded-xl bg-[#072e2c] text-slate-300 hover:text-white border border-teal-900/50 active:scale-95 transition-all cursor-pointer"
+            aria-label={isMobileOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
+            aria-expanded={isMobileOpen}
           >
-            <Menu className="h-5 w-5" />
+            {isMobileOpen ? <X className="h-5 w-5 text-[#0da594]" /> : <Menu className="h-5 w-5" />}
           </button>
           <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity" title="Go to Landing Page">
             <img
@@ -130,7 +123,8 @@ export default function Sidebar() {
       {isMobileOpen && (
         <div
           onClick={() => setIsMobileOpen(false)}
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
+          aria-hidden="true"
         />
       )}
 

@@ -29,6 +29,8 @@ export default function BudgetsPage() {
     new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
   );
 
+  const [activeField, setActiveField] = useState<string | null>(null);
+
   // Redirect if guest
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -45,6 +47,51 @@ export default function BudgetsPage() {
     },
     enabled: isAuthenticated,
   });
+
+  // AI Live Form Filler Listener
+  useEffect(() => {
+    const handleAiFormAction = (e: any) => {
+      const detail = e?.detail || {};
+      if (detail.open_modal || detail.modal_type === 'budget') {
+        setIsOpen(true);
+      }
+      if (detail.close_modal) {
+        setIsOpen(false);
+      }
+      if (detail.fields) {
+        if (detail.fields.amount !== undefined && detail.fields.amount !== null && detail.fields.amount !== '') {
+          setAmount(detail.fields.amount.toString());
+        }
+        if (detail.fields.category) {
+          const target = detail.fields.category.toString().toLowerCase().trim();
+          const match = categories?.find((c: any) => {
+            const name = c.name.toLowerCase().trim();
+            return name === target || name.includes(target) || target.includes(name);
+          });
+          if (match) {
+            setCategory(match.id.toString());
+          }
+        }
+      }
+      if (detail.active_field) {
+        setActiveField(detail.active_field);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      const pending = sessionStorage.getItem('pending_ai_form_action');
+      if (pending) {
+        sessionStorage.removeItem('pending_ai_form_action');
+        try {
+          const parsed = JSON.parse(pending);
+          handleAiFormAction({ detail: parsed });
+        } catch (err) {}
+      }
+
+      window.addEventListener('ai_form_action', handleAiFormAction);
+      return () => window.removeEventListener('ai_form_action', handleAiFormAction);
+    }
+  }, [categories]);
 
   // Fetch budgets
   const { data: budgets, isLoading: budgetsLoading } = useQuery({

@@ -26,6 +26,7 @@ export default function SavingsGoalsPage() {
   const [targetAmount, setTargetAmount] = useState('');
   const [currentAmount, setCurrentAmount] = useState('0');
   const [targetDate, setTargetDate] = useState('');
+  const [activeField, setActiveField] = useState<string | null>(null);
 
   // Redirect guest
   useEffect(() => {
@@ -33,6 +34,43 @@ export default function SavingsGoalsPage() {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, router]);
+
+  // AI Live Form Filler Listener
+  useEffect(() => {
+    const handleAiFormAction = (e: any) => {
+      const detail = e?.detail || {};
+      if (detail.open_modal || detail.modal_type === 'goal') {
+        setIsOpen(true);
+      }
+      if (detail.close_modal) {
+        setIsOpen(false);
+      }
+      if (detail.fields) {
+        if (detail.fields.name) setName(detail.fields.name);
+        if (detail.fields.target_amount !== undefined && detail.fields.target_amount !== null && detail.fields.target_amount !== '') {
+          setTargetAmount(detail.fields.target_amount.toString());
+        }
+        if (detail.fields.target_date) setTargetDate(detail.fields.target_date);
+      }
+      if (detail.active_field) {
+        setActiveField(detail.active_field);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      const pending = sessionStorage.getItem('pending_ai_form_action');
+      if (pending) {
+        sessionStorage.removeItem('pending_ai_form_action');
+        try {
+          const parsed = JSON.parse(pending);
+          handleAiFormAction({ detail: parsed });
+        } catch (err) {}
+      }
+
+      window.addEventListener('ai_form_action', handleAiFormAction);
+      return () => window.removeEventListener('ai_form_action', handleAiFormAction);
+    }
+  }, []);
 
   // Fetch savings goals
   const { data: goals, isLoading: goalsLoading } = useQuery({

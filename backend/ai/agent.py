@@ -6,7 +6,7 @@ from langgraph.graph import StateGraph, END
 
 from django.contrib.auth import get_user_model
 # pyrefly: ignore [missing-import]
-from .groq_client import get_groq_llm
+from .groq_client import get_groq_llm, invoke_groq_with_fallback
 # pyrefly: ignore [missing-import]
 from .tools.sql_tool import execute_safe_financial_query
 # pyrefly: ignore [missing-import]
@@ -90,6 +90,12 @@ Use YYYY-MM-DD for dates. Current date is {today_str}.
 Do NOT set start_date or end_date unless the user explicitly mentions a specific date or date range in their query!
 If user asks generally about transactions (e.g. I want to know about my transactions, show transactions), leave start_date and end_date as null.
 If user explicitly asks about this month, set start_date to {start_of_month} and end_date to {today_str}.
+
+STEP-BY-STEP FORM FILLING RULES:
+1. When the user says "add a transaction", "fill transaction form", "create a savings goal", "create budget", OR responds to an assistant question asking for a specific field value (e.g., answering "what is the amount?" with "500" or "which category?" with "Food"):
+   - Classify the intent as the appropriate form creation intent ("create_transaction", "create_savings_goal", or "create_budget").
+   - Extract the new field parameter from the user's latest response.
+   - Crucial: Carefully review previous assistant/user messages in history and retain all previously extracted parameters (amount, category_name, description, type, date, name, target_amount, target_date) so no field values are lost during multi-turn form filling!
 """
 
     messages = [
@@ -101,7 +107,7 @@ If user explicitly asks about this month, set start_date to {start_of_month} and
     messages.append({"role": "user", "content": state['current_query']})
 
     try:
-        response = llm.invoke(messages)
+        response = invoke_groq_with_fallback(messages, temperature=0.0)
         # Attempt to parse json
         content = response.content.strip()
         
@@ -183,25 +189,54 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
             result = trigger_report_generation(user, start_date_str, end_date_str)
         elif intent == 'create_transaction':
             target_page = '/transactions'
+            amount = params.get('amount')
+            category_name = params.get('category_name')
+            description = params.get('description')
+            trans_type = params.get('type') or 'expense'
+            trans_date = params.get('date') or str(datetime.date.today())
+
+            # Essential fields for submission
+            is_complete = bool(amount and category_name)
+            
+            # Determine active and missing field for live UI focus
             active_field = 'amount'
-            if params.get('amount') and not params.get('category_name'):
+            missing_field = 'amount'
+            if amount and not category_name:
                 active_field = 'category'
-            elif params.get('amount') and params.get('category_name') and not params.get('description'):
+                missing_field = 'category'
+            elif amount and category_name and not description:
                 active_field = 'description'
+                missing_field = 'description'
+            elif amount and category_name:
+                active_field = None
+                missing_field = None
 
             form_action = {
-                'open_modal': True,
+                'open_modal': not is_complete,
+                'close_modal': is_complete,
                 'modal_type': 'transaction',
                 'active_field': active_field,
+                'missing_field': missing_field,
+                'is_complete': is_complete,
                 'fields': {
-                    'amount': params.get('amount'),
-                    'type': params.get('type') or 'expense',
-                    'category': params.get('category_name'),
-                    'description': params.get('description'),
-                    'date': params.get('date') or str(datetime.date.today())
+                    'amount': amount,
+                    'type': trans_type,
+                    'category': category_name,
+                    'description': description,
+                    'date': trans_date
                 }
             }
-            tool_res = create_transaction_tool(user, params)
+
+            if is_complete:
+                tool_res = create_transaction_tool(user, params)
+            else:
+                if not amount:
+                    tool_res = "Transaction form modal opened on screen. Amount field is active. Ask user for the transaction amount."
+                elif not category_name:
+                    tool_res = f"Amount {amount} filled into open form modal on screen. Category field is active. Ask user which category this belongs to."
+                else:
+                    tool_res = f"Amount {amount} and Category '{category_name}' filled in form modal. Ask user for a description or if they are ready to save."
+
             result = {
                 'tool_output': tool_res,
                 'target_page': target_page,
@@ -209,17 +244,48 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
             }
         elif intent == 'create_savings_goal':
             target_page = '/goals'
+            name = params.get('name')
+            target_amount = params.get('target_amount')
+            target_date = params.get('target_date')
+
+            is_complete = bool(name and target_amount)
+
+            active_field = 'name'
+            missing_field = 'name'
+            if name and not target_amount:
+                active_field = 'target_amount'
+                missing_field = 'target_amount'
+            elif name and target_amount and not target_date:
+                active_field = 'target_date'
+                missing_field = 'target_date'
+            elif name and target_amount:
+                active_field = None
+                missing_field = None
+
             form_action = {
-                'open_modal': True,
+                'open_modal': not is_complete,
+                'close_modal': is_complete,
                 'modal_type': 'goal',
-                'active_field': 'name' if not params.get('name') else ('target_amount' if not params.get('target_amount') else 'target_date'),
+                'active_field': active_field,
+                'missing_field': missing_field,
+                'is_complete': is_complete,
                 'fields': {
-                    'name': params.get('name'),
-                    'target_amount': params.get('target_amount'),
-                    'target_date': params.get('target_date')
+                    'name': name,
+                    'target_amount': target_amount,
+                    'target_date': target_date
                 }
             }
-            tool_res = create_savings_goal_tool(user, params)
+
+            if is_complete:
+                tool_res = create_savings_goal_tool(user, params)
+            else:
+                if not name:
+                    tool_res = "Savings goal form modal opened on screen. Name field is active. Ask user for the goal name."
+                elif not target_amount:
+                    tool_res = f"Goal name '{name}' filled in form modal. Target amount field is active. Ask user how much they want to save."
+                else:
+                    tool_res = f"Goal '{name}' with target {target_amount} filled in form modal. Ask user for the target date."
+
             result = {
                 'tool_output': tool_res,
                 'target_page': target_page,
@@ -227,16 +293,41 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
             }
         elif intent == 'create_budget':
             target_page = '/budgets'
+            category_name = params.get('category_name')
+            amount = params.get('amount')
+
+            is_complete = bool(category_name and amount)
+
+            active_field = 'category'
+            missing_field = 'category'
+            if category_name and not amount:
+                active_field = 'amount'
+                missing_field = 'amount'
+            elif category_name and amount:
+                active_field = None
+                missing_field = None
+
             form_action = {
-                'open_modal': True,
+                'open_modal': not is_complete,
+                'close_modal': is_complete,
                 'modal_type': 'budget',
-                'active_field': 'category' if not params.get('category_name') else 'amount',
+                'active_field': active_field,
+                'missing_field': missing_field,
+                'is_complete': is_complete,
                 'fields': {
-                    'category': params.get('category_name'),
-                    'amount': params.get('amount')
+                    'category': category_name,
+                    'amount': amount
                 }
             }
-            tool_res = create_budget_tool(user, params)
+
+            if is_complete:
+                tool_res = create_budget_tool(user, params)
+            else:
+                if not category_name:
+                    tool_res = "Budget form modal opened on screen. Category field is active. Ask user which category to set a budget for."
+                else:
+                    tool_res = f"Category '{category_name}' selected in form modal. Amount field is active. Ask user for the budget limit amount."
+
             result = {
                 'tool_output': tool_res,
                 'target_page': target_page,
@@ -379,6 +470,7 @@ Core Personality Rules:
 10. Keep responses warm, encouraging, and human. If in a difficult situation, show genuine empathy and give a brief, supportive, and direct response.
 11. NO UNPROMPTED DATA DUMP: If asking a general question, answer ONLY that question. Do NOT mention personal budgets or goals.
 12. ZERO HALLUCINATION & FACTUAL ACCURACY RULE (CRITICAL): NEVER invent, fabricate, make up, or imagine any transaction, date, store name, or amount (e.g. NEVER make up Dhaba, 1200 taka, or any item not present in database context or tool output). Strictly adhere to database evidence. If a transaction exists in context (such as 70 taka on August 4th for Breakfast), accurately confirm it. NEVER contradict database evidence or deny a transaction that exists in context.
+13. STEP-BY-STEP FORM FILLING GUIDANCE: If tool execution result indicates an active form step or missing field, acknowledge whatever field value was just recorded in the open form modal on screen, then ask a direct, single, warm question for the NEXT missing field. Do NOT say the item has been created or saved in the database until all required fields are filled and saved!
 
 Formatting:
 - Use markdown bullet points or numbered lists only for suggestions/recommendations sections.
@@ -430,7 +522,7 @@ Detected Intent: {state['detected_intent']}
     messages.append({"role": "user", "content": user_context})
 
     try:
-        response = llm.invoke(messages)
+        response = invoke_groq_with_fallback(messages, temperature=0.0)
         return {'final_response': response.content}
     except Exception as e:
         return {'final_response': f"I apologize, I encountered an issue preparing my response: {str(e)}"}

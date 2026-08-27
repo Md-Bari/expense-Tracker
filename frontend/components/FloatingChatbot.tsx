@@ -397,15 +397,17 @@ export default function FloatingChatbot() {
             setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
 
             const formAction = response.data.form_action || response.data.data?.form_action;
+            const targetPage = response.data.target_page || response.data.data?.target_page;
+
             if (formAction && typeof window !== 'undefined') {
+              sessionStorage.setItem('pending_ai_form_action', JSON.stringify(formAction));
               window.dispatchEvent(new CustomEvent('ai_form_action', { detail: formAction }));
             }
 
-            const targetPage = response.data.target_page || response.data.data?.target_page;
-            if (targetPage) {
+            if (targetPage && typeof window !== 'undefined' && window.location.pathname !== targetPage) {
               setTimeout(() => {
                 router.push(targetPage);
-              }, 800);
+              }, 400);
             }
 
             speak(reply);
@@ -636,15 +638,17 @@ export default function FloatingChatbot() {
       ]);
 
       const formAction = response.data.form_action || response.data.data?.form_action;
+      const targetPage = response.data.target_page || response.data.data?.target_page;
+
       if (formAction && typeof window !== 'undefined') {
+        sessionStorage.setItem('pending_ai_form_action', JSON.stringify(formAction));
         window.dispatchEvent(new CustomEvent('ai_form_action', { detail: formAction }));
       }
 
-      const targetPage = response.data.target_page || response.data.data?.target_page;
-      if (targetPage) {
+      if (targetPage && typeof window !== 'undefined' && window.location.pathname !== targetPage) {
         setTimeout(() => {
           router.push(targetPage);
-        }, 800);
+        }, 400);
       }
     } catch (error) {
       setMessages((prev) => [

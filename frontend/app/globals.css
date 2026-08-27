@@ -77,3 +77,177 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.4);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   LIGHT MODE STYLING SYSTEM FOR DASHBOARD & WEB APP
+   ───────────────────────────────────────────────────────────── */
+
+body.light,
+html.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Main background containers */
+body.light .bg-\[\#041a19\],
+body.light .bg-\[\#052322\],
+body.light .min-h-screen.bg-\[\#041a19\],
+body.light .min-h-screen.bg-\[\#052322\],
+body.light main.bg-\[\#052322\],
+body.light main.bg-\[\#041a19\] {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Card, panel & widget surfaces */
+body.light .bg-\[\#072e2c\],
+body.light .bg-\[\#031413\],
+body.light .bg-slate-900,
+body.light .bg-slate-950,
+body.light .bg-slate-950\/40,
+body.light .bg-slate-950\/60,
+body.light .bg-slate-900\/40,
+body.light .bg-slate-900\/60,
+body.light .bg-slate-900\/90 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Hover effects */
+body.light .hover\:bg-\[\#0a3f3c\]:hover,
+body.light .hover\:bg-\[\#072e2c\]:hover,
+body.light .hover\:bg-slate-800:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Borders */
+body.light .border-teal-950,
+body.light .border-teal-950\/60,
+body.light .border-teal-950\/50,
+body.light .border-teal-950\/40,
+body.light .border-teal-950\/20,
+body.light .border-teal-900,
+body.light .border-teal-900\/60,
+body.light .border-teal-900\/50,
+body.light .border-teal-900\/40,
+body.light .border-teal-900\/30,
+body.light .border-slate-800,
+body.light .border-slate-850,
+body.light .border-slate-700 {
+  border-color: #e2e8f0 !important;
+}
+
+/* High contrast typography */
+body.light .text-white,
+body.light .text-slate-100,
+body.light .text-slate-200 {
+  color: #0f172a !important;
+}
+
+body.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+body.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+body.light .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* Sidebar navigation */
+body.light aside {
+  background-color: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+  color: #334155 !important;
+  box-shadow: 1px 0 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+body.light aside a {
+  color: #475569 !important;
+}
+
+body.light aside a:hover {
+  background-color: #f0fdfa !important;
+  color: #0da594 !important;
+}
+
+body.light aside .bg-\[\#0da594\]\/15 {
+  background-color: #f0fdfa !important;
+  color: #0da594 !important;
+  border-left-color: #0da594 !important;
+}
+
+body.light aside .bg-\[\#031413\] {
+  background-color: #f8fafc !important;
+  border-top-color: #e2e8f0 !important;
+}
+
+body.light aside .bg-\[\#052322\] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Mobile top navigation header */
+body.light .sticky.top-0.bg-\[\#052322\]\/95,
+body.light .sticky.top-0.bg-\[\#052322\] {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+/* Tables in Light Mode */
+body.light table {
+  background-color: #ffffff !important;
+}
+
+body.light table th,
+body.light thead tr {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.light table td,
+body.light tbody tr {
+  border-bottom-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+body.light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Form Inputs, Selects & Textareas */
+body.light input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]),
+body.light select,
+body.light textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.light input::placeholder,
+body.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Glass Panels */
+body.light .glass-panel {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Language & Currency badges */
+body.light .bg-\[\#072e2c\] {
+  background-color: #ffffff !important;
+}
+
+/* Chat bubble styling */
+body.light .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+

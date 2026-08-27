@@ -78,20 +78,31 @@ export default function TransactionsPage() {
   // AI Live Form Filler Listener
   useEffect(() => {
     const handleAiFormAction = (e: any) => {
-      const detail = e.detail || {};
+      const detail = e?.detail || {};
       if (detail.open_modal || detail.modal_type === 'transaction') {
         setIsOpen(true);
       }
+      if (detail.close_modal) {
+        setIsOpen(false);
+      }
       if (detail.fields) {
-        if (detail.fields.amount !== undefined && detail.fields.amount !== null) {
+        if (detail.fields.amount !== undefined && detail.fields.amount !== null && detail.fields.amount !== '') {
           setAmount(detail.fields.amount.toString());
         }
         if (detail.fields.type) setType(detail.fields.type);
-        if (detail.fields.description) setDescription(detail.fields.description);
+        if (detail.fields.description !== undefined && detail.fields.description !== null) {
+          setDescription(detail.fields.description);
+        }
         if (detail.fields.date) setDate(detail.fields.date);
         if (detail.fields.category) {
-          const match = categories?.find((c: any) => c.name.toLowerCase() === detail.fields.category.toLowerCase());
-          if (match) setCategory(match.id.toString());
+          const target = detail.fields.category.toString().toLowerCase().trim();
+          const match = categories?.find((c: any) => {
+            const name = c.name.toLowerCase().trim();
+            return name === target || name.includes(target) || target.includes(name);
+          });
+          if (match) {
+            setCategory(match.id.toString());
+          }
         }
       }
       if (detail.active_field) {
@@ -99,7 +110,17 @@ export default function TransactionsPage() {
       }
     };
 
+    // Check for any pending action from previous page navigation
     if (typeof window !== 'undefined') {
+      const pending = sessionStorage.getItem('pending_ai_form_action');
+      if (pending) {
+        sessionStorage.removeItem('pending_ai_form_action');
+        try {
+          const parsed = JSON.parse(pending);
+          handleAiFormAction({ detail: parsed });
+        } catch (err) {}
+      }
+
       window.addEventListener('ai_form_action', handleAiFormAction);
       return () => window.removeEventListener('ai_form_action', handleAiFormAction);
     }
