@@ -1,5 +1,8 @@
 import os
-import dj_database_url
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 from pathlib import Path
 from datetime import timedelta
 
@@ -78,7 +81,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # Railway provides DATABASE_URL; local Docker uses individual POSTGRES_* vars
 _database_url = os.environ.get('DATABASE_URL')
-if _database_url:
+if _database_url and dj_database_url:
     DATABASES = {
         'default': dj_database_url.config(
             default=_database_url,
