@@ -12,8 +12,8 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-default-key-fo
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-# Allow all hosts — Railway and Vercel handle SSL/domain security at the edge
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',') if os.environ.get('DJANGO_ALLOWED_HOSTS') else ['*']
+# Allow all hosts — edge platforms (Vercel, Railway, Cloudflare) manage SSL and routing
+ALLOWED_HOSTS = ['*']
 APPEND_SLASH = False
 
 # Application definition
