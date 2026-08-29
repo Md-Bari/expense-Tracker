@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Standalone output for optimized Docker/Railway builds
-  output: 'standalone',
+  // Standalone output for Docker/Railway — Vercel has its own build system
+  // RAILWAY_ENVIRONMENT is automatically set by Railway, never by Vercel
+  output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   // Dev origins for local + Cloudflare tunnel development
   allowedDevOrigins: [
     'localhost:3009',
