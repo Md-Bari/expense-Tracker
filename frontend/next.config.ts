@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Prevent Next.js 308 redirects on trailing slashes so POST payloads aren't lost
   skipTrailingSlashRedirect: true,
-  skipMiddlewareUrlNormalize: true,
+  skipProxyUrlNormalize: true,
   // Standalone output for Docker/Railway — Vercel has its own build system
   // RAILWAY_ENVIRONMENT is automatically set by Railway, never by Vercel
   output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
