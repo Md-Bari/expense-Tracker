@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   // Dev origins for local + Cloudflare tunnel development
   allowedDevOrigins: [
+    'farmers-specialties-responding-admit.trycloudflare.com',
     'expense-tracker-kappa-two-22.vercel.app',
     'localhost:3009',
     'localhost:8007',

@@ -189,6 +189,7 @@ _default_trusted = [
     'http://10.10.33.26:3009',
     'https://*.vercel.app',
     'https://*.railway.app',
+    'https://*.trycloudflare.com',
 ]
 CSRF_TRUSTED_ORIGINS = list(set([o.strip() for o in _env_origins if o.strip()] + _default_trusted))
 
