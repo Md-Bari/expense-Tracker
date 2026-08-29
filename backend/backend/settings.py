@@ -178,7 +178,7 @@ CORS_ALLOW_HEADERS = [
     'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with',
 ]
 
-# Configure CSRF trusted origins dynamically for Vercel, Railway, Cloudflare tunnels, and local dev
+# Configure CSRF trusted origins dynamically for Vercel, Railway, and local dev
 _env_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if os.environ.get('CORS_ALLOWED_ORIGINS') else []
 _default_trusted = [
     'http://localhost:3000',
@@ -189,7 +189,6 @@ _default_trusted = [
     'http://10.10.33.26:3009',
     'https://*.vercel.app',
     'https://*.railway.app',
-    'https://*.trycloudflare.com',
 ]
 CSRF_TRUSTED_ORIGINS = list(set([o.strip() for o in _env_origins if o.strip()] + _default_trusted))
 
