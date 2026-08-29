@@ -22,12 +22,20 @@ const nextConfig: NextConfig = {
 
     return [
       {
+        source: '/api',
+        destination: `${backendUrl}/api/`,
+      },
+      {
+        source: '/api/',
+        destination: `${backendUrl}/api/`,
+      },
+      {
         source: '/api/:path*/',
         destination: `${backendUrl}/api/:path*/`,
       },
       {
         source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*/`,
+        destination: `${backendUrl}/api/:path*`,
       },
       {
         source: '/media/:path*',
