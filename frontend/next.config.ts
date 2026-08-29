@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Standalone output for optimized Docker/Railway builds
+  output: 'standalone',
   // Dev origins for local + Cloudflare tunnel development
   allowedDevOrigins: [
     'localhost:3009',

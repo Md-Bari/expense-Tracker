@@ -1,5 +1,4 @@
-version: '3.8'
-
+# Local development only — Railway uses individual Dockerfiles + railway.json per service
 services:
   db:
     image: postgres:17-alpine
@@ -101,6 +100,7 @@ services:
       - "3009:3009"
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - INTERNAL_BACKEND_URL=http://backend:8007
       - PORT=${PORT}
     depends_on:
       - backend
