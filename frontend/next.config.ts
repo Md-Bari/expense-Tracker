@@ -6,8 +6,7 @@ const nextConfig: NextConfig = {
   output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   // Dev origins for local + Cloudflare tunnel development
   allowedDevOrigins: [
-    'concert-correctly-accessibility-docs.trycloudflare.com',
-    'emma-select-cio-accomplished.trycloudflare.com',
+    'expense-tracker-kappa-two-22.vercel.app',
     'localhost:3009',
     'localhost:8007',
     '10.10.33.26:3009',
