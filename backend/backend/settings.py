@@ -157,17 +157,29 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
 }
 
-# CORS Configuration
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3009,http://10.10.33.26:3009,http://10.0.2.2:3009').split(',')
-CORS_ALLOW_ALL_ORIGINS = True # Easier for development with mobile devices
+# CORS & CSRF Configuration
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept', 'accept-encoding', 'authorization', 'content-type',
     'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with',
 ]
 
-# CSRF trusted origins for Cloudflare tunnels
-CSRF_TRUSTED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
+# Configure CSRF trusted origins dynamically for Vercel, Railway, Cloudflare tunnels, and local dev
+_env_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if os.environ.get('CORS_ALLOWED_ORIGINS') else []
+_default_trusted = [
+    'http://localhost:3000',
+    'http://localhost:3009',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3009',
+    'http://10.0.2.2:3009',
+    'http://10.10.33.26:3009',
+    'https://*.vercel.app',
+    'https://*.railway.app',
+    'https://*.trycloudflare.com',
+]
+CSRF_TRUSTED_ORIGINS = list(set([o.strip() for o in _env_origins if o.strip()] + _default_trusted))
+
 
 # Celery Configuration
 CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
