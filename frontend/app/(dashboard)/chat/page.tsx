@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { Send, Bot, User, RefreshCw, BarChart3, PieChart as PieIcon, LineChart, Mic } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart as RechartsLineChart, Line } from 'recharts';
 import ThreeDVoiceOrb from '@/components/ThreeDVoiceOrb';
+import HolographicAiVisualizer from '@/components/HolographicAiVisualizer';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -168,11 +169,12 @@ const SAMPLE_PROMPTS = [
 export default function AIChatPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { language, t } = useLanguage();
 
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hello! I am Aura, your personal AI financial advisor. Ask me anything about your finances or choose one of the sample queries below to get started:",
+      content: "Hello! I am FinCore AI, your personal AI financial advisor. Ask me anything about your finances or choose one of the sample queries below to get started:",
     },
   ]);
   const [input, setInput] = useState('');
@@ -857,45 +859,37 @@ export default function AIChatPage() {
         <footer className="p-6 border-t border-slate-900 bg-slate-900/10">
           <div className="max-w-4xl mx-auto">
             {isVoiceActive ? (
-              <div 
-                onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
-                className={`bg-slate-950 border border-indigo-500/30 rounded-2xl p-3 flex items-center justify-between shadow-lg shadow-indigo-500/5 transition-all ${
-                  voiceStatus === 'speaking' ? 'cursor-pointer hover:border-indigo-500/60' : ''
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {/* Embedded 3D Voice Orb */}
-                  <div className="shrink-0">
-                    <ThreeDVoiceOrb status={voiceStatus} size="sm" />
+              <div className="space-y-3">
+                {/* Holographic AI Visualizer HUD (Exact match to reference) */}
+                <HolographicAiVisualizer
+                  status={voiceStatus}
+                  size="lg"
+                  onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
+                />
+
+                {/* Sub-bar with Status & Controls */}
+                <div className="flex items-center justify-between max-w-2xl mx-auto px-4">
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${voiceStatus === 'speaking' ? 'bg-emerald-400 animate-ping' : 'bg-cyan-400 animate-pulse'}`}></span>
+                    <span className="text-xs text-slate-300 font-medium">
+                      {voiceStatus === 'listening' && (language === 'bn' ? "কথা শুনছি... বলুন" : "Continuous listening active...")}
+                      {voiceStatus === 'thinking' && (language === 'bn' ? "প্রসেসিং হচ্ছে..." : "Analyzing query & financial ledger...")}
+                      {voiceStatus === 'speaking' && (language === 'bn' ? "কথা বলছি... (থামাতে ট্যাপ করুন)" : "FinCore AI is responding (Tap to pause)")}
+                      {voiceStatus === 'idle' && (language === 'bn' ? "প্রস্তুত" : "Holographic Assistant Ready")}
+                    </span>
                   </div>
 
-                  {/* Status & Live Prompt Description */}
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <span className="text-[11px] font-bold text-white uppercase tracking-wider">
-                        Voice Assistant • {voiceStatus}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      {voiceStatus === 'listening' && "Continuous listening mode... Speak your query"}
-                      {voiceStatus === 'thinking' && "Processing financial context..."}
-                      {voiceStatus === 'speaking' && "Aura is speaking... (click bar or say 'stop' to interrupt)"}
-                    </p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleVoice();
+                    }}
+                    className="px-3.5 py-1.5 bg-rose-600/15 hover:bg-rose-600/30 border border-rose-500/40 hover:border-rose-500/70 rounded-xl text-xs font-semibold text-rose-300 hover:text-white transition-all cursor-pointer shadow-md"
+                  >
+                    {language === 'bn' ? "ভয়েস বন্ধ করুন" : "Turn Off Voice"}
+                  </button>
                 </div>
-
-                {/* Turn Off / Switch back to text box */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleVoice();
-                  }}
-                  className="px-4 py-2 bg-rose-600/10 hover:bg-rose-600/20 border border-rose-500/20 rounded-xl text-xs font-semibold text-rose-400 transition-all cursor-pointer shrink-0"
-                >
-                  Turn Off Voice
-                </button>
               </div>
             ) : (
               <form onSubmit={handleSend} className="relative flex items-center gap-3">
@@ -914,7 +908,7 @@ export default function AIChatPage() {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask Aura a financial query..."
+                    placeholder="Ask FinCore AI a financial query..."
                     disabled={loading}
                     className="w-full bg-slate-950 border border-slate-850 rounded-2xl py-3.5 pl-5 pr-14 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all disabled:opacity-50"
                   />

@@ -98,11 +98,11 @@ export default function Sidebar() {
           </button>
           <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity" title="Go to Landing Page">
             <img
-              src="/aura_logo.png"
-              alt="Aura Logo"
-              className="h-7 w-7 rounded-lg object-cover border border-teal-900/50"
+              src="/fincore_logo.png"
+              alt="FinCore AI Logo"
+              className="h-8 w-8 rounded-xl object-cover border border-teal-500/40 shadow-md shadow-teal-500/20"
             />
-            <span className="text-base font-bold text-white tracking-tight">{language === 'bn' ? 'ঔরা এআই' : 'Aura AI'}</span>
+            <span className="text-base font-bold text-white tracking-tight">{language === 'bn' ? 'ফিনকোর এআই' : 'FinCore AI'}</span>
           </Link>
         </div>
 
@@ -138,12 +138,12 @@ export default function Sidebar() {
         <div className="p-6 border-b border-teal-950/60 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity group" title="Go to Landing Page">
             <img
-              src="/aura_logo.png"
-              alt="Aura Logo"
-              className="h-9 w-9 rounded-lg object-cover shadow-lg shadow-teal-500/20 border border-teal-900/50 group-hover:scale-105 transition-transform"
+              src="/fincore_logo.png"
+              alt="FinCore AI Logo"
+              className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-teal-500/25 border border-teal-500/40 group-hover:scale-105 transition-transform"
             />
             <div>
-              <h1 className="text-lg font-bold text-white tracking-tight group-hover:text-[#0da594] transition-colors">{language === 'bn' ? 'ঔরা এআই' : 'Aura AI'}</h1>
+              <h1 className="text-lg font-bold text-white tracking-tight group-hover:text-[#0da594] transition-colors">{language === 'bn' ? 'ফিনকোর এআই' : 'FinCore AI'}</h1>
               <p className="text-xs text-[#0da594] font-medium">Smart Wealth Manager</p>
             </div>
           </Link>

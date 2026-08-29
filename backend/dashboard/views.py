@@ -40,23 +40,33 @@ class DashboardSummaryView(APIView):
             } for item in category_breakdown
         ]
 
-        # 3. Cash Flow Trajectory (Past 6 Months)
-        six_months_ago = this_month_start - datetime.timedelta(days=180)
+        # 3. Cash Flow Trajectory (Past 6 Months continuous timeline)
+        months_list = []
+        for i in range(5, -1, -1):
+            m = today.month - i
+            y = today.year
+            while m <= 0:
+                m += 12
+                y -= 1
+            first_day = datetime.date(y, m, 1)
+            label = first_day.strftime('%b %Y')
+            months_list.append((first_day, label))
+
+        six_months_ago = months_list[0][0]
         historical_tx = Transaction.objects.filter(
-            user=user, date__range=[six_months_ago, today]
+            user=user, date__gte=six_months_ago, date__lte=today
         ).annotate(month=TruncMonth('date')).values('month', 'type').annotate(total=Sum('amount')).order_by('month')
 
-        # Format historical data for Recharts area charts
-        cash_flow_dict = {}
+        # Initialize full 6-month timeline in chronological order
+        cash_flow_dict = {label: {'name': label, 'income': 0.0, 'expense': 0.0} for _, label in months_list}
         for item in historical_tx:
-            m_str = item['month'].strftime('%b %Y') if item['month'] else 'Unknown'
-            if m_str not in cash_flow_dict:
-                cash_flow_dict[m_str] = {'name': m_str, 'income': 0.0, 'expense': 0.0}
-            
-            if item['type'] == 'income':
-                cash_flow_dict[m_str]['income'] = float(item['total'])
-            elif item['type'] == 'expense':
-                cash_flow_dict[m_str]['expense'] = float(item['total'])
+            if item['month']:
+                m_str = item['month'].strftime('%b %Y')
+                if m_str in cash_flow_dict:
+                    if item['type'] == 'income':
+                        cash_flow_dict[m_str]['income'] += float(item['total'])
+                    elif item['type'] == 'expense':
+                        cash_flow_dict[m_str]['expense'] += float(item['total'])
 
         cash_flow_data = list(cash_flow_dict.values())
 

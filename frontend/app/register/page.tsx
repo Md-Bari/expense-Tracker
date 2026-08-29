@@ -72,10 +72,12 @@ export default function RegisterPage() {
 
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-8">
-          <div className="mx-auto h-12 w-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-indigo-500/20 mb-3">
-            A
-          </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">{t('auth.registerTitle', 'Join Aura Wealth Manager')}</h2>
+          <img
+            src="/fincore_logo.png"
+            alt="FinCore AI Logo"
+            className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-xl shadow-indigo-500/25 border border-indigo-500/30 mb-3"
+          />
+          <h2 className="text-2xl font-bold tracking-tight text-white">{t('auth.registerTitle', 'Join FinCore AI Wealth Manager')}</h2>
           <p className="text-sm text-slate-400 mt-1.5">{t('landing.heroSub', 'Take control of your finances with AI insights')}</p>
         </div>
 

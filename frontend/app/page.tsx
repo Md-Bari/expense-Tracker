@@ -199,13 +199,13 @@ export default function LandingPage() {
     { 
       icon: <Mic className="h-5 w-5" />, 
       title: language === 'bn' ? 'ক্লিয়ার ভয়েস অ্যাসিস্ট্যান্ট' : 'Clear Voice Assistant', 
-      desc: language === 'bn' ? 'ঔরা এআই-এর সাথে সরাসরি কথা বলুন। উচ্চ মানের প্রাকৃতিক কণ্ঠস্বর ও নির্ভুল বাংলা স্পিচ রিকগনিশন।' : 'Talk directly with Aura. Natural speech recognition with high-quality voice synthesis.', 
+      desc: language === 'bn' ? 'ফিনকোর এআই-এর সাথে সরাসরি কথা বলুন। উচ্চ মানের প্রাকৃতিক কণ্ঠস্বর ও নির্ভুল বাংলা স্পিচ রিকগনিশন।' : 'Talk directly with FinCore AI. Natural speech recognition with high-quality voice synthesis.', 
       color: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', border: 'border-teal-100' 
     },
     { 
       icon: <ScanLine className="h-5 w-5" />, 
       title: language === 'bn' ? 'ওসিআর রসিদ স্ক্যানার' : 'OCR Receipt Scanner', 
-      desc: language === 'bn' ? 'রসিদের ছবি আপলোড করুন। মুহূর্তেই রসিদ থেকে কেনাকাটার আইটেম, মোট দাম ও বিবরণ স্বয়ংক্রিয়ভাবে এক্সট্র্যাক্ট হবে।' : 'Upload receipt images. Aura instantly extracts items, totals, and descriptions automatically.', 
+      desc: language === 'bn' ? 'রসিদের ছবি আপলোড করুন। মুহূর্তেই রসিদ থেকে কেনাকাটার আইটেম, মোট দাম ও বিবরণ স্বয়ংক্রিয়ভাবে এক্সট্র্যাক্ট হবে।' : 'Upload receipt images. FinCore AI instantly extracts items, totals, and descriptions automatically.', 
       color: 'from-teal-400 to-cyan-500', bg: 'bg-cyan-50', border: 'border-cyan-100' 
     },
     { 
@@ -313,13 +313,13 @@ export default function LandingPage() {
               {isMobileMenuOpen ? <X className="h-5 w-5 text-[#0da594]" /> : <Menu className="h-5 w-5" />}
             </button>
 
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-              <svg className="w-8 h-8 text-[#0da594]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="3" y="14" width="4" height="6" rx="1" fill="currentColor" />
-                <rect x="10" y="8" width="4" height="12" rx="1" fill="currentColor" />
-                <rect x="17" y="3" width="4" height="17" rx="1" fill="currentColor" />
-              </svg>
-              <span className="font-extrabold text-2xl tracking-tight text-white">Aura AI</span>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push('/')}>
+              <img
+                src="/fincore_logo.png"
+                alt="FinCore AI Logo"
+                className="w-9 h-9 rounded-xl object-cover border border-teal-500/40 shadow-lg shadow-teal-500/25"
+              />
+              <span className="font-extrabold text-2xl tracking-tight text-white">{language === 'bn' ? 'ফিনকোর এআই' : 'FinCore AI'}</span>
             </div>
           </div>
 
@@ -570,7 +570,7 @@ export default function LandingPage() {
                     <div className="h-3 w-3 rounded-full bg-rose-400"></div>
                     <div className="h-3 w-3 rounded-full bg-amber-400"></div>
                     <div className="h-3 w-3 rounded-full bg-emerald-400"></div>
-                    <span className="text-[10px] text-slate-400 font-mono ml-2">Aura Interactive Demo</span>
+                    <span className="text-[10px] text-slate-400 font-mono ml-2">FinCore AI Interactive Demo</span>
                   </div>
                   <div className="px-2.5 py-0.5 rounded-full bg-teal-50 border border-teal-100 text-[9px] font-bold text-[#0da594] uppercase tracking-wider">Guest Preview</div>
                 </div>
@@ -861,13 +861,13 @@ export default function LandingPage() {
           
           {/* Logo & Contact details */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-              <svg className="w-7 h-7 text-[#0da594]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="3" y="14" width="4" height="6" rx="1" fill="currentColor" />
-                <rect x="10" y="8" width="4" height="12" rx="1" fill="currentColor" />
-                <rect x="17" y="3" width="4" height="17" rx="1" fill="currentColor" />
-              </svg>
-              <span className="font-extrabold text-xl tracking-tight text-white">{language === 'bn' ? 'ঔরা এআই' : 'Aura AI'}</span>
+            <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => router.push('/')}>
+              <img
+                src="/fincore_logo.png"
+                alt="FinCore AI Logo"
+                className="w-8 h-8 rounded-xl object-cover border border-teal-500/40 shadow-md shadow-teal-500/20"
+              />
+              <span className="font-extrabold text-xl tracking-tight text-white">{language === 'bn' ? 'ফিনকোর এআই' : 'FinCore AI'}</span>
             </div>
             <p className="text-slate-400 leading-relaxed text-[12px]">
               {t('landing.footerDesc', 'AI-powered wealth management and financial intelligence consulting. Insights, budgets, and automated reporting.')}
@@ -939,7 +939,7 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 pt-6 border-t border-teal-950/30 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-slate-500 text-[11px]">© 2026 Aura AI. All rights reserved.</p>
+          <p className="text-slate-500 text-[11px]">© 2026 FinCore AI. All rights reserved.</p>
           <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
             <span>{t('landing.builtFor', 'Built for smart cost tracking & wealth decisions')}</span>
           </div>

@@ -229,7 +229,7 @@ export default function ReportsPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-xs text-slate-400 leading-relaxed">
-                Choose the dates for your statement period. Aura will gather your cash flow, categories, and active budgets to render a custom document.
+                Choose the dates for your statement period. FinCore AI will gather your cash flow, categories, and active budgets to render a custom document.
               </p>
               
               <div className="grid grid-cols-2 gap-4">

@@ -15,11 +15,11 @@ const hindSiliguri = Hind_Siliguri({
 });
 
 export const metadata: Metadata = {
-  title: "Aura - AI Wealth & Expense Manager",
-  description: "Manage your income, expenses, budgets, savings goals, and chat with an intelligent financial advisor agent.",
+  title: "FinCore AI - AI Wealth & Expense Manager",
+  description: "Manage your income, expenses, budgets, savings goals, and chat with an intelligent financial advisor agent powered by FinCore AI.",
   icons: {
-    icon: '/aura_logo.png',
-    apple: '/aura_logo.png',
+    icon: '/fincore_logo.png',
+    apple: '/fincore_logo.png',
   },
 };
 

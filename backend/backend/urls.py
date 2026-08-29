@@ -7,7 +7,7 @@ from django.http import JsonResponse
 def api_health_check(request):
     return JsonResponse({
         "status": "online",
-        "message": "Aura Expense Tracker API is running successfully",
+        "message": "FinCore AI Expense Tracker API is running successfully",
         "endpoints": {
             "auth": "/api/auth/login/",
             "transactions": "/api/transactions/",

@@ -198,30 +198,68 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cash flow Area Chart */}
             <div className="bg-[#072e2c] border border-teal-900/60 p-6 rounded-2xl lg:col-span-2 space-y-4 shadow-lg shadow-teal-950/30">
-              <h3 className="text-base font-extrabold text-white">{t('dash.cashflowTrend', 'Cash Flow Trajectory')}</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-extrabold text-white">{t('dash.cashflowTrend', 'Cash Flow Trajectory')}</h3>
+                <div className="flex items-center gap-4 text-xs font-semibold">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#0da594]"></span>
+                    <span className="text-slate-300">{t('trans.typeIncome', 'Income')}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#f43f5e]"></span>
+                    <span className="text-slate-300">{t('trans.typeExpense', 'Expense')}</span>
+                  </div>
+                </div>
+              </div>
               <div className="h-80 w-full">
                 {cashFlow.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={cashFlow} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={cashFlow} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#0da594" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#0da594" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#0da594" stopOpacity={0.45}/>
+                          <stop offset="95%" stopColor="#0da594" stopOpacity={0.02}/>
                         </linearGradient>
                         <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.45}/>
+                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.02}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#052322" opacity={0.6} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#052322" opacity={0.8} />
                       <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#041a19', borderColor: '#0da594', borderRadius: '12px' }}
-                        labelStyle={{ color: '#fff', fontWeight: 'bold' }}
+                      <YAxis 
+                        stroke="#94a3b8" 
+                        fontSize={11} 
+                        tickLine={false} 
+                        tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}
                       />
-                      <Area type="monotone" dataKey="income" name={t('trans.typeIncome', 'Income')} stroke="#0da594" strokeWidth={2.5} fillOpacity={1} fill="url(#colorIncome)" />
-                      <Area type="monotone" dataKey="expense" name={t('trans.typeExpense', 'Expense')} stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorExpense)" />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#041a19', borderColor: '#0da594', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}
+                        labelStyle={{ color: '#fff', fontWeight: 'bold' }}
+                        formatter={(val: any) => [formatCurrency(Number(val)), '']}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="income" 
+                        name={t('trans.typeIncome', 'Income')} 
+                        stroke="#0da594" 
+                        strokeWidth={3} 
+                        dot={{ r: 3.5, fill: '#0da594', stroke: '#fff', strokeWidth: 1.5 }}
+                        activeDot={{ r: 6, fill: '#0da594', stroke: '#fff', strokeWidth: 2 }}
+                        fillOpacity={1} 
+                        fill="url(#colorIncome)" 
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="expense" 
+                        name={t('trans.typeExpense', 'Expense')} 
+                        stroke="#f43f5e" 
+                        strokeWidth={3} 
+                        dot={{ r: 3.5, fill: '#f43f5e', stroke: '#fff', strokeWidth: 1.5 }}
+                        activeDot={{ r: 6, fill: '#f43f5e', stroke: '#fff', strokeWidth: 2 }}
+                        fillOpacity={1} 
+                        fill="url(#colorExpense)" 
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (

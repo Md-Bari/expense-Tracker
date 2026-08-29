@@ -160,12 +160,12 @@ const dictionary: Record<string, { en: string; bn: string }> = {
   'reports.preview': { en: 'Report Preview', bn: 'রিপোর্ট প্রিভিউ' },
 
   // AI Chatbot & Voice Orb
-  'chat.title': { en: 'AI Financial Advisor', bn: 'এআই ফাইন্যান্সিয়াল এডভাইজার' },
+  'chat.title': { en: 'FinCore AI Financial Advisor', bn: 'ফিনকোর এআই ফাইন্যান্সিয়াল এডভাইজার' },
   'chat.subtitle': { en: 'Ask questions, request wealth advice, and get instant financial insights.', bn: 'যে কোনো প্রশ্ন করুন, আর্থিক পরামর্শ নিন এবং তাৎক্ষণিক ইনসাইট পান।' },
-  'chat.placeholder': { en: 'Ask Aura about your expenses, budgets, or savings tips...', bn: 'আপনার খরচ, বাজেট বা সঞ্চয়ের কৌশল সম্পর্কে ঔরা-কে জিজ্ঞাসা করুন...' },
+  'chat.placeholder': { en: 'Ask FinCore AI about your expenses, budgets, or savings tips...', bn: 'আপনার খরচ, বাজেট বা সঞ্চয়ের কৌশল সম্পর্কে ফিনকোর এআই-কে জিজ্ঞাসা করুন...' },
   'chat.send': { en: 'Send', bn: 'পাঠান' },
-  'chat.speaking': { en: 'Aura is listening...', bn: 'ঔরা শুনছে...' },
-  'chat.thinking': { en: 'Aura is thinking...', bn: 'ঔরা চিন্তা করছে...' },
+  'chat.speaking': { en: 'FinCore AI is listening...', bn: 'ফিনকোর এআই শুনছে...' },
+  'chat.thinking': { en: 'FinCore AI is thinking...', bn: 'ফিনকোর এআই চিন্তা করছে...' },
   'chat.suggestions': { en: 'Quick Prompts', bn: 'দ্রুত প্রশ্নসমূহ' },
   'chat.suggestion1': { en: 'How can I increase my savings rate this month?', bn: 'এই মাসে কীভাবে আমার সঞ্চয়ের হার বাড়ানো সম্ভব?' },
   'chat.suggestion2': { en: 'Summarize my highest spending category.', bn: 'আমার সবচেয়ে বেশি খরচ হওয়া ক্যাটাগরির বিবরণ দাও।' },
@@ -196,7 +196,7 @@ const dictionary: Record<string, { en: string; bn: string }> = {
   
   'landing.slide2_sub': { en: 'INTELLIGENT FINANCIAL COGNITION', bn: 'বুদ্ধিমান আর্থিক বিশ্লেষণ ও সিদ্ধান্ত' },
   'landing.slide2_title': { en: 'Analytical Thinking For Smart Savings', bn: 'স্মার্ট সঞ্চয়ের জন্য আধুনিক বিশ্লেষণ' },
-  'landing.slide2_desc': { en: 'Speak naturally to Aura AI to get real-time expense category classification, sandboxed insights, and customized targets.', bn: 'ঔরা এআই-এর সাথে বাংলায় সরাসরি কথা বলুন এবং মুহূর্তেই খরচের সঠিক শ্রেণীবিন্যাস ও লক্ষ্য নির্ধারণ করুন।' },
+  'landing.slide2_desc': { en: 'Speak naturally to FinCore AI to get real-time expense category classification, sandboxed insights, and customized targets.', bn: 'ফিনকোর এআই-এর সাথে বাংলায় সরাসরি কথা বলুন এবং মুহূর্তেই খরচের সঠিক শ্রেণীবিন্যাস ও লক্ষ্য নির্ধারণ করুন।' },
 
   'landing.slide3_sub': { en: 'SECURE & SECURED SANDBOX', bn: 'সম্পূর্ণ নিরাপদ ও সুরক্ষিত সিস্টেম' },
   'landing.slide3_title': { en: 'Advanced Tracking, Simplified Reporting', bn: 'উন্নত ট্র্যাকিং এবং সহজ রিপোর্ট তৈরি' },
@@ -211,17 +211,17 @@ const dictionary: Record<string, { en: string; bn: string }> = {
   'landing.makeAppointment': { en: 'Make An Appointment', bn: 'অ্যাপয়েন্টমেন্ট নিন' },
 
   'landing.demoBadge': { en: 'Live Interaction Preview', bn: 'লাইভ ইন্টারঅ্যাকশন প্রিভিউ' },
-  'landing.demoTitle': { en: 'Try Aura in Action', bn: 'ঔরা এআই লাইভ ব্যবহার দেখুন' },
-  'landing.demoSub': { en: 'Click a sample prompt to see how Aura interprets questions, analyzes expense data, and responds with structured financial insights.', bn: 'একটি নমুনা প্রশ্নে ক্লিক করে দেখুন কীভাবে ঔরা হিসাব বিশ্লেষণ করে চমৎকার আর্থিক পরামর্শ প্রদান করে।' },
+  'landing.demoTitle': { en: 'Try FinCore AI in Action', bn: 'ফিনকোর এআই লাইভ ব্যবহার দেখুন' },
+  'landing.demoSub': { en: 'Click a sample prompt to see how FinCore AI interprets questions, analyzes expense data, and responds with structured financial insights.', bn: 'একটি নমুনা প্রশ্নে ক্লিক করে দেখুন কীভাবে ফিনকোর এআই হিসাব বিশ্লেষণ করে চমৎকার আর্থিক পরামর্শ প্রদান করে।' },
   'landing.demoSelectPrompt': { en: 'Select a sample prompt to start', bn: 'শুরু করতে একটি প্রশ্ন নির্বাচন করুন' },
-  'landing.demoAnalyzing': { en: 'Aura is analyzing...', bn: 'ঔরা বিশ্লেষণ করছে...' },
+  'landing.demoAnalyzing': { en: 'FinCore AI is analyzing...', bn: 'ফিনকোর এআই বিশ্লেষণ করছে...' },
 
   'landing.videoBadge': { en: 'WATCH COMPANY VIDEO', bn: 'আমাদের পরিচিতি ভিডিও দেখুন' },
   'landing.videoTitle': { en: 'This is your all-in-one financial and wealth platform', bn: 'এটি আপনার অল-ইন-ওয়ান আর্থিক ও সম্পদ ব্যবস্থাপনা প্ল্যাটফর্ম' },
   'landing.watchVideo': { en: 'Watch Our Video', bn: 'আমাদের ভিডিওটি দেখুন' },
 
   'landing.testimonialsBadge': { en: 'TESTIMONIALS', bn: 'ব্যবহারকারীদের মতামত' },
-  'landing.testimonialsTitle': { en: 'What Our Users Said About Aura', bn: 'ঔরা সম্পর্কে আমাদের ব্যবহারকারীদের অভিজ্ঞতা' },
+  'landing.testimonialsTitle': { en: 'What Our Users Said About FinCore AI', bn: 'ফিনকোর এআই সম্পর্কে আমাদের ব্যবহারকারীদের অভিজ্ঞতা' },
 
   'landing.pricingBadge': { en: 'Pricing & Subscriptions', bn: 'মূল্য এবং সাবস্ক্রিপশন প্ল্যান' },
   'landing.pricingTitle': { en: 'Choose Your Plan', bn: 'আপনার পছন্দের প্ল্যান বাছুন' },
@@ -253,8 +253,8 @@ const dictionary: Record<string, { en: string; bn: string }> = {
   'landing.getStarted': { en: 'Get Started Free', bn: 'বিনামূল্যে শুরু করুন' },
   'landing.login': { en: 'Sign In', bn: 'সাইন ইন করুন' },
   'landing.register': { en: 'Create Account', bn: 'অ্যাকাউন্ট খুলুন' },
-  'auth.loginTitle': { en: 'Welcome Back to Aura', bn: 'ঔরা-তে আপনাকে স্বাগতম' },
-  'auth.registerTitle': { en: 'Join Aura Wealth Manager', bn: 'ঔরা ওয়েল্থ ম্যানেজারে যোগ দিন' },
+  'auth.loginTitle': { en: 'Welcome Back to FinCore AI', bn: 'ফিনকোর এআই-তে আপনাকে স্বাগতম' },
+  'auth.registerTitle': { en: 'Join FinCore AI Wealth Manager', bn: 'ফিনকোর এআই ওয়েল্থ ম্যানেজারে যোগ দিন' },
   'auth.email': { en: 'Email Address', bn: 'ইমেইল অ্যাড্রেস' },
   'auth.username': { en: 'Username', bn: 'ইউজারনেম' },
   'auth.password': { en: 'Password', bn: 'পাসওয়ার্ড' },

@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.aura.expensetracker',
-  appName: 'Aura',
+  appId: 'com.fincore.expensetracker',
+  appName: 'FinCore AI',
   webDir: 'public',
   // Server URL mode: load the live running web app instead of static files.
   // This means no static export is needed — the web version stays untouched.

@@ -8,6 +8,7 @@ import { api } from '@/services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Sparkles, X, Send, Bot, Mic } from 'lucide-react';
 import ThreeDVoiceOrb from '@/components/ThreeDVoiceOrb';
+import HolographicAiVisualizer from '@/components/HolographicAiVisualizer';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -239,8 +240,8 @@ export default function FloatingChatbot() {
     {
       role: 'assistant',
       content: language === 'bn' 
-        ? "হ্যালো! আমি ঔরা, আপনার ব্যক্তিগত ভার্চুয়াল ওয়েল্থ ম্যানেজার। আপনার বাজেট, সাম্প্রতিক লেনদেন বা সঞ্চয় সম্পর্কিত যে কোনো প্রশ্ন জিজ্ঞাসা করতে পারেন।"
-        : "Hi there! I am Aura, your virtual wealth manager. Ask me questions about your budgets, recent transactions, or pick one of these sample queries:",
+        ? "হ্যালো! আমি ফিনকোর এআই, আপনার ব্যক্তিগত ভার্চুয়াল ওয়েল্থ ম্যানেজার। আপনার বাজেট, সাম্প্রতিক লেনদেন বা সঞ্চয় সম্পর্কিত যে কোনো প্রশ্ন জিজ্ঞাসা করতে পারেন।"
+        : "Hi there! I am FinCore AI, your virtual wealth manager. Ask me questions about your budgets, recent transactions, or pick one of these sample queries:",
     },
   ]);
   const [input, setInput] = useState('');
@@ -675,40 +676,54 @@ export default function FloatingChatbot() {
             {isVoiceActive && (
               <div 
                 onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
-                className={`absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 z-30 space-y-6 text-center ${
-                  voiceStatus === 'speaking' ? 'cursor-pointer hover:bg-slate-950/90 transition-all' : ''
+                className={`absolute inset-0 bg-[#041d1c]/95 flex flex-col items-center justify-between p-5 z-30 text-center backdrop-blur-xl border border-[#0da594]/40 ${
+                  voiceStatus === 'speaking' ? 'cursor-pointer hover:bg-[#041d1c]/90 transition-all' : ''
                 }`}
               >
-                 <div className="space-y-1 pointer-events-none">
-                  <h3 className="text-sm font-bold text-white tracking-wider uppercase">Voice Assistant</h3>
-                  <p className="text-[10px] text-indigo-400 font-semibold uppercase tracking-widest">{voiceStatus}</p>
+                {/* Top Status Badge */}
+                <div className="space-y-1 z-10">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#031716]/80 border border-[#0da594]/40 shadow-inner">
+                    <span className={`h-2 w-2 rounded-full ${voiceStatus === 'speaking' ? 'bg-emerald-400 animate-ping' : 'bg-cyan-400 animate-pulse'}`}></span>
+                    <span className="text-xs font-bold text-white tracking-wider uppercase">FinCore Holographic AI</span>
+                    <span className="text-[9px] text-[#2dd4bf] font-extrabold uppercase tracking-widest bg-[#0da594]/20 px-2 py-0.5 rounded-full border border-[#0da594]/30">
+                      {voiceStatus}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Futuristic 3D Circular Moving Voice Orb */}
-                <div className="my-2 pointer-events-none">
-                  <ThreeDVoiceOrb status={voiceStatus} size="sm" />
+                {/* Holographic AI Visualizer HUD (Exact match to reference) */}
+                <div className="w-full my-auto pointer-events-auto">
+                  <HolographicAiVisualizer
+                    status={voiceStatus}
+                    size="sm"
+                    className="border-[#0da594]/60 bg-[#041d1c]/90 shadow-[0_0_30px_rgba(13,165,148,0.3)]"
+                  />
                 </div>
 
-                <div className="text-[11px] text-slate-400 max-w-xs leading-relaxed px-4 pointer-events-none">
-                  {voiceStatus === 'listening' && "Continuous mode. Speak a command or question..."}
-                  {voiceStatus === 'thinking' && "Structuring RAG context..."}
-                  {voiceStatus === 'speaking' && (
-                    <div className="space-y-1">
-                      <p>Speaking...</p>
-                      <p className="text-[9px] text-indigo-400 font-bold animate-pulse">Say "stop" or start asking a new query</p>
-                    </div>
-                  )}
-                </div>
+                {/* Subtitle & Intelligent Prompt Guidance */}
+                <div className="space-y-3 z-10 w-full">
+                  <div className="text-[11px] text-slate-300 max-w-xs mx-auto leading-relaxed font-medium">
+                    {voiceStatus === 'listening' && (language === 'bn' ? "কথা শুনছি... বলুন" : "Continuous mode. Speak a command or question...")}
+                    {voiceStatus === 'thinking' && (language === 'bn' ? "প্রসেসিং হচ্ছে..." : "Analyzing ledger & contextual memory...")}
+                    {voiceStatus === 'speaking' && (
+                      <div className="space-y-0.5">
+                        <p className="text-white font-semibold">{language === 'bn' ? "কথা বলছি..." : "FinCore AI is speaking..."}</p>
+                        <p className="text-[10px] text-teal-300 font-bold animate-pulse">{language === 'bn' ? "থামাতে ট্যাপ করুন বা 'stop' বলুন" : "Tap anywhere or say 'stop' to interrupt"}</p>
+                      </div>
+                    )}
+                    {voiceStatus === 'idle' && (language === 'bn' ? "প্রস্তুত" : "Ready to listen")}
+                  </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleVoice();
-                  }}
-                  className="px-5 py-2.5 bg-rose-600/10 hover:bg-rose-600/25 border border-rose-500/20 rounded-xl text-[10px] font-bold text-rose-400 transition-all cursor-pointer shadow-md"
-                >
-                  Close Session
-                </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleVoice();
+                    }}
+                    className="px-6 py-2 bg-rose-600/15 hover:bg-rose-600/30 border border-rose-500/40 hover:border-rose-500/70 rounded-xl text-xs font-bold text-rose-300 hover:text-white transition-all cursor-pointer shadow-md"
+                  >
+                    {language === 'bn' ? "ভয়েস বন্ধ করুন" : "Close Voice Session"}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -835,50 +850,74 @@ export default function FloatingChatbot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.85 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-[calc(50%+8rem)] z-50 flex items-center gap-4 px-6 py-3.5 bg-[#052322]/95 border border-[#0da594]/50 backdrop-blur-xl rounded-full shadow-[0_10px_40px_rgba(13,165,148,0.4)] text-white"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-[calc(50%+8rem)] z-50 flex items-center justify-between gap-3 sm:gap-6 px-5 sm:px-6 py-2.5 sm:py-3 bg-[#041d1c]/95 border-2 border-[#0da594]/60 backdrop-blur-2xl rounded-3xl shadow-[0_12px_45px_rgba(13,165,148,0.4)] text-white"
           >
-            {/* 3D Voice Orb */}
-            <div 
-              className="shrink-0 cursor-pointer" 
-              onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
-              title={voiceStatus === 'speaking' ? "Tap to stop speaking" : "Voice Orb"}
-            >
-              <ThreeDVoiceOrb status={voiceStatus} size="sm" />
-            </div>
-
             {/* Status & Speech Info */}
-            <div className="flex flex-col min-w-[150px] max-w-[260px]">
+            <div className="flex flex-col min-w-[110px] sm:min-w-[140px] max-w-[200px]">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-[#0da594] animate-pulse"></span>
-                <span className="text-xs font-black tracking-wider uppercase text-white">Aura Voice</span>
-                <span className="text-[10px] text-[#0da594] font-bold uppercase tracking-widest bg-[#0da594]/20 px-2 py-0.5 rounded-full border border-[#0da594]/30">
+                <span className={`h-2 w-2 rounded-full ${voiceStatus === 'speaking' ? 'bg-emerald-400 animate-ping' : 'bg-cyan-400 animate-pulse'}`}></span>
+                <span className="text-xs font-black tracking-wider uppercase text-white">FinCore AI</span>
+                <span className="text-[9px] text-[#2dd4bf] font-extrabold uppercase tracking-widest bg-[#0da594]/20 px-2 py-0.5 rounded-full border border-[#0da594]/30">
                   {voiceStatus}
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 truncate mt-0.5 font-medium">
-                {voiceStatus === 'listening' && (language === 'bn' ? "কথা শুনছি... বলুন" : "Continuous listening... Speak your query")}
-                {voiceStatus === 'thinking' && (language === 'bn' ? "প্রসেসিং হচ্ছে..." : "Aura is analyzing...")}
-                {voiceStatus === 'speaking' && (language === 'bn' ? "কথা বলছি... (থামাতে ট্যাপ করুন)" : "Speaking... (Tap orb to pause)")}
+                {voiceStatus === 'listening' && (language === 'bn' ? "কথা শুনছি... বলুন" : "Listening...")}
+                {voiceStatus === 'thinking' && (language === 'bn' ? "প্রসেসিং হচ্ছে..." : "Analyzing...")}
+                {voiceStatus === 'speaking' && (language === 'bn' ? "কথা বলছি..." : "Speaking...")}
                 {voiceStatus === 'idle' && (language === 'bn' ? "প্রস্তুত" : "Ready")}
               </p>
             </div>
 
-            {/* Micro Waveform Visualizer */}
-            <div className="flex items-center gap-1 h-6 px-1">
-              <span className={`w-1 rounded-full bg-[#0da594] transition-all duration-300 ${voiceStatus === 'speaking' || voiceStatus === 'listening' ? 'h-5 animate-pulse' : 'h-2'}`}></span>
-              <span className={`w-1 rounded-full bg-[#0da594] transition-all duration-300 ${voiceStatus === 'speaking' || voiceStatus === 'listening' ? 'h-3 animate-pulse delay-75' : 'h-1.5'}`}></span>
-              <span className={`w-1 rounded-full bg-[#0da594] transition-all duration-300 ${voiceStatus === 'speaking' || voiceStatus === 'listening' ? 'h-6 animate-pulse delay-150' : 'h-3'}`}></span>
-              <span className={`w-1 rounded-full bg-[#0da594] transition-all duration-300 ${voiceStatus === 'speaking' || voiceStatus === 'listening' ? 'h-4 animate-pulse delay-100' : 'h-2'}`}></span>
+            {/* Left Pink Micro Waveform */}
+            <div className="hidden sm:flex items-center gap-1 h-8 px-1">
+              {[8, 14, 22, 16, 10].map((h, i) => (
+                <motion.span
+                  key={i}
+                  animate={{
+                    height: voiceStatus === 'speaking' || voiceStatus === 'listening' ? [h * 0.6, h * 1.3, h * 0.6] : h * 0.4,
+                  }}
+                  transition={{ repeat: Infinity, duration: 0.6 + i * 0.1, delay: i * 0.05 }}
+                  className="w-1 rounded-full bg-gradient-to-t from-pink-500 to-fuchsia-400 shadow-[0_0_6px_rgba(244,114,182,0.8)]"
+                  style={{ minHeight: '3px' }}
+                />
+              ))}
             </div>
 
-            {/* End Session Button */}
-            <button
-              onClick={toggleVoice}
-              className="p-2 rounded-full bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/30 text-rose-300 hover:text-white transition-all cursor-pointer shrink-0 ml-1"
-              title="Close Voice Session"
+            {/* Centered Holographic Projector Pedestal + Atomic 3D Orb */}
+            <div 
+              className="shrink-0 cursor-pointer transform hover:scale-105 transition-all duration-300 drop-shadow-[0_0_25px_rgba(34,211,238,0.5)]" 
+              onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
+              title={voiceStatus === 'speaking' ? "Tap to stop speaking" : "FinCore Holographic Orb"}
             >
-              <X className="h-4 w-4" />
-            </button>
+              <ThreeDVoiceOrb status={voiceStatus} size="sm" showPedestal={true} />
+            </div>
+
+            {/* Right Cyan Micro Waveform & Action Button */}
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-1 h-8 px-1">
+                {[10, 16, 22, 14, 8].map((h, i) => (
+                  <motion.span
+                    key={i}
+                    animate={{
+                      height: voiceStatus === 'speaking' || voiceStatus === 'listening' ? [h * 0.6, h * 1.3, h * 0.6] : h * 0.4,
+                    }}
+                    transition={{ repeat: Infinity, duration: 0.6 + i * 0.1, delay: i * 0.05 }}
+                    className="w-1 rounded-full bg-gradient-to-t from-teal-500 to-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]"
+                    style={{ minHeight: '3px' }}
+                  />
+                ))}
+              </div>
+
+              {/* End Session Button */}
+              <button
+                onClick={toggleVoice}
+                className="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/40 text-rose-300 hover:text-white transition-all cursor-pointer shrink-0"
+                title="Close Voice Session"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
