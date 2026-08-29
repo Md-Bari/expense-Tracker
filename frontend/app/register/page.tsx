@@ -46,11 +46,20 @@ export default function RegisterPage() {
     } catch (err: any) {
       const data = err.response?.data;
       if (data) {
-        // Collect field errors or generic error
-        const message = Object.entries(data)
-          .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
-          .join('\n');
-        setError(message || 'Registration failed. Please check inputs.');
+        if (typeof data === 'string') {
+          if (data.trim().startsWith('<')) {
+            setError('Server connection error. Please check backend configuration.');
+          } else {
+            setError(data);
+          }
+        } else if (typeof data === 'object') {
+          const message = Object.entries(data)
+            .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
+            .join('\n');
+          setError(message || 'Registration failed. Please check inputs.');
+        } else {
+          setError('Registration failed. Please check inputs.');
+        }
       } else {
         setError('Network error occurred. Please try again.');
       }
