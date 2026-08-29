@@ -859,23 +859,22 @@ export default function AIChatPage() {
         <footer className="p-6 border-t border-slate-900 bg-slate-900/10">
           <div className="max-w-4xl mx-auto">
             {isVoiceActive ? (
-              <div className="space-y-3">
-                {/* Holographic AI Visualizer HUD (Exact match to reference) */}
-                <HolographicAiVisualizer
-                  status={voiceStatus}
-                  size="lg"
-                  onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
-                />
+              <div 
+                onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
+                className={`relative overflow-hidden bg-slate-950/80 border border-teal-500/30 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-[0_0_60px_rgba(13,165,148,0.25)] backdrop-blur-2xl transition-all ${
+                  voiceStatus === 'speaking' ? 'cursor-pointer hover:border-teal-500/60' : ''
+                }`}
+              >
+                {/* Ambient Radial Background Aura */}
+                <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-teal-500/15 via-cyan-500/5 to-transparent"></div>
 
-                {/* Sub-bar with Status & Controls */}
-                <div className="flex items-center justify-between max-w-2xl mx-auto px-4">
-                  <div className="flex items-center gap-2">
+                {/* Top Status Header */}
+                <div className="w-full flex items-center justify-between z-10 mb-2">
+                  <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-teal-500/30 shadow-inner">
                     <span className={`h-2 w-2 rounded-full ${voiceStatus === 'speaking' ? 'bg-emerald-400 animate-ping' : 'bg-cyan-400 animate-pulse'}`}></span>
-                    <span className="text-xs text-slate-300 font-medium">
-                      {voiceStatus === 'listening' && (language === 'bn' ? "কথা শুনছি... বলুন" : "Continuous listening active...")}
-                      {voiceStatus === 'thinking' && (language === 'bn' ? "প্রসেসিং হচ্ছে..." : "Analyzing query & financial ledger...")}
-                      {voiceStatus === 'speaking' && (language === 'bn' ? "কথা বলছি... (থামাতে ট্যাপ করুন)" : "FinCore AI is responding (Tap to pause)")}
-                      {voiceStatus === 'idle' && (language === 'bn' ? "প্রস্তুত" : "Holographic Assistant Ready")}
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-white">FinCore AI Neural Voice</span>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-400/30">
+                      {voiceStatus}
                     </span>
                   </div>
 
@@ -885,10 +884,83 @@ export default function AIChatPage() {
                       e.stopPropagation();
                       toggleVoice();
                     }}
-                    className="px-3.5 py-1.5 bg-rose-600/15 hover:bg-rose-600/30 border border-rose-500/40 hover:border-rose-500/70 rounded-xl text-xs font-semibold text-rose-300 hover:text-white transition-all cursor-pointer shadow-md"
+                    className="px-4 py-1.5 bg-rose-600/15 hover:bg-rose-600/30 border border-rose-500/40 hover:border-rose-500/70 rounded-xl text-xs font-semibold text-rose-300 hover:text-white transition-all cursor-pointer shadow-md flex items-center gap-1.5"
                   >
                     {language === 'bn' ? "ভয়েস বন্ধ করুন" : "Turn Off Voice"}
                   </button>
+                </div>
+
+                {/* Centered Floating 3D Dynamic Orb & Flanking Equalizer Waveforms */}
+                <div className="my-3 flex items-center justify-center gap-6 sm:gap-12 z-10 w-full">
+                  {/* Left Dynamic Soundwave Equalizer (Pink / Magenta) */}
+                  <div className="hidden sm:flex items-center gap-1.5 h-20">
+                    {[14, 26, 42, 60, 48, 30, 16].map((baseH, i) => (
+                      <motion.span 
+                        key={i} 
+                        animate={{
+                          height: voiceStatus === 'speaking' || voiceStatus === 'listening' 
+                            ? [baseH * 0.6, baseH * 1.3, baseH * 0.7, baseH * 1.15, baseH * 0.6] 
+                            : baseH * 0.35,
+                          opacity: voiceStatus === 'speaking' || voiceStatus === 'listening' ? [0.8, 1, 0.8] : 0.4,
+                        }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 0.75 + (i % 3) * 0.15,
+                          delay: i * 0.08,
+                          ease: 'easeInOut'
+                        }}
+                        className="w-1.5 rounded-full bg-gradient-to-t from-pink-500 via-fuchsia-400 to-pink-300 shadow-[0_0_12px_rgba(244,114,182,0.9)]"
+                        style={{ minHeight: '6px' }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Centered Large Floating 3D Orb */}
+                  <div 
+                    className="shrink-0 cursor-pointer transform hover:scale-105 transition-all duration-300 drop-shadow-[0_0_40px_rgba(13,165,148,0.5)]"
+                    title={voiceStatus === 'speaking' ? "Tap orb to pause speaking" : "FinCore AI Neural Core"}
+                  >
+                    <ThreeDVoiceOrb status={voiceStatus} size="lg" />
+                  </div>
+
+                  {/* Right Dynamic Soundwave Equalizer (Cyan / Teal) */}
+                  <div className="hidden sm:flex items-center gap-1.5 h-20">
+                    {[16, 30, 48, 60, 42, 26, 14].map((baseH, i) => (
+                      <motion.span 
+                        key={i} 
+                        animate={{
+                          height: voiceStatus === 'speaking' || voiceStatus === 'listening' 
+                            ? [baseH * 0.65, baseH * 1.25, baseH * 0.75, baseH * 1.15, baseH * 0.65] 
+                            : baseH * 0.35,
+                          opacity: voiceStatus === 'speaking' || voiceStatus === 'listening' ? [0.8, 1, 0.8] : 0.4,
+                        }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 0.8 + (i % 3) * 0.15,
+                          delay: i * 0.08,
+                          ease: 'easeInOut'
+                        }}
+                        className="w-1.5 rounded-full bg-gradient-to-t from-teal-500 via-cyan-400 to-teal-200 shadow-[0_0_12px_rgba(34,211,238,0.9)]"
+                        style={{ minHeight: '6px' }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Intelligent Guidance & Dynamic Feedback Text */}
+                <div className="space-y-1.5 z-10 max-w-md mt-1">
+                  <p className="text-sm font-bold text-white tracking-wide">
+                    {voiceStatus === 'listening' && (language === 'bn' ? "কথা শুনছি... বলুন" : "Continuous Neural Listening Active")}
+                    {voiceStatus === 'thinking' && (language === 'bn' ? "প্রসেসিং হচ্ছে..." : "Structuring RAG Ledger Context...")}
+                    {voiceStatus === 'speaking' && (language === 'bn' ? "কথা বলছি..." : "FinCore AI is Responding")}
+                    {voiceStatus === 'idle' && (language === 'bn' ? "প্রস্তুত" : "Neural Assistant Ready")}
+                  </p>
+                  <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                    {voiceStatus === 'listening' && (language === 'bn' ? "আপনার প্রশ্ন বলুন বা '৫০০ টাকা যোগ করো' বলুন" : "Speak your financial query or say 'Add 500 taka for grocery'")}
+                    {voiceStatus === 'thinking' && (language === 'bn' ? "হিসাব ও বিশ্লেষণ করা হচ্ছে..." : "Analyzing expenses, budgets, and financial context...")}
+                    {voiceStatus === 'speaking' && (language === 'bn' ? "থামাতে যেকোনো জায়গায় চাপুন" : "Tap anywhere on the orb or say 'stop' to interrupt")}
+                    {voiceStatus === 'idle' && (language === 'bn' ? "মাইক্রোফোনে স্পষ্ট করে বলুন" : "Speak clearly into your microphone to begin")}
+                  </p>
                 </div>
               </div>
             ) : (

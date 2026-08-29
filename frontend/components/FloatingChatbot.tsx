@@ -676,7 +676,7 @@ export default function FloatingChatbot() {
             {isVoiceActive && (
               <div 
                 onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
-                className={`absolute inset-0 bg-[#041d1c]/95 flex flex-col items-center justify-between p-5 z-30 text-center backdrop-blur-xl border border-[#0da594]/40 ${
+                className={`absolute inset-0 bg-[#041d1c]/95 flex flex-col items-center justify-between p-6 z-30 text-center backdrop-blur-xl border border-[#0da594]/40 ${
                   voiceStatus === 'speaking' ? 'cursor-pointer hover:bg-[#041d1c]/90 transition-all' : ''
                 }`}
               >
@@ -684,20 +684,63 @@ export default function FloatingChatbot() {
                 <div className="space-y-1 z-10">
                   <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#031716]/80 border border-[#0da594]/40 shadow-inner">
                     <span className={`h-2 w-2 rounded-full ${voiceStatus === 'speaking' ? 'bg-emerald-400 animate-ping' : 'bg-cyan-400 animate-pulse'}`}></span>
-                    <span className="text-xs font-bold text-white tracking-wider uppercase">FinCore Holographic AI</span>
+                    <span className="text-xs font-bold text-white tracking-wider uppercase">FinCore AI Voice</span>
                     <span className="text-[9px] text-[#2dd4bf] font-extrabold uppercase tracking-widest bg-[#0da594]/20 px-2 py-0.5 rounded-full border border-[#0da594]/30">
                       {voiceStatus}
                     </span>
                   </div>
                 </div>
 
-                {/* Holographic AI Visualizer HUD (Exact match to reference) */}
-                <div className="w-full my-auto pointer-events-auto">
-                  <HolographicAiVisualizer
-                    status={voiceStatus}
-                    size="sm"
-                    className="border-[#0da594]/60 bg-[#041d1c]/90 shadow-[0_0_30px_rgba(13,165,148,0.3)]"
-                  />
+                {/* Floating 3D Orb + Flanking Dynamic Waves */}
+                <div className="my-auto py-2 flex items-center justify-center gap-4 sm:gap-6 pointer-events-auto w-full">
+                  {/* Left Pink Equalizer Waveform */}
+                  <div className="flex items-center gap-1 h-14">
+                    {[10, 18, 28, 38, 24, 14].map((baseH, i) => (
+                      <motion.span
+                        key={i}
+                        animate={{
+                          height: voiceStatus === 'speaking' || voiceStatus === 'listening'
+                            ? [baseH * 0.6, baseH * 1.3, baseH * 0.6]
+                            : baseH * 0.35,
+                        }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 0.75 + (i % 2) * 0.2,
+                          delay: i * 0.08,
+                          ease: 'easeInOut',
+                        }}
+                        className="w-1 rounded-full bg-gradient-to-t from-pink-500 to-fuchsia-400 shadow-[0_0_8px_rgba(244,114,182,0.85)]"
+                        style={{ minHeight: '4px' }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Centered Floating 3D Orb */}
+                  <div className="cursor-pointer transform hover:scale-105 transition-all duration-300 drop-shadow-[0_0_35px_rgba(13,165,148,0.55)]">
+                    <ThreeDVoiceOrb status={voiceStatus} size="md" />
+                  </div>
+
+                  {/* Right Cyan Equalizer Waveform */}
+                  <div className="flex items-center gap-1 h-14">
+                    {[14, 24, 38, 28, 18, 10].map((baseH, i) => (
+                      <motion.span
+                        key={i}
+                        animate={{
+                          height: voiceStatus === 'speaking' || voiceStatus === 'listening'
+                            ? [baseH * 0.65, baseH * 1.25, baseH * 0.65]
+                            : baseH * 0.35,
+                        }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 0.8 + (i % 2) * 0.2,
+                          delay: i * 0.08,
+                          ease: 'easeInOut',
+                        }}
+                        className="w-1 rounded-full bg-gradient-to-t from-teal-500 to-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.85)]"
+                        style={{ minHeight: '4px' }}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 {/* Subtitle & Intelligent Prompt Guidance */}
@@ -734,7 +777,7 @@ export default function FloatingChatbot() {
                   <Bot className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-white leading-none">{t('chat.title', 'Aura Advisor')}</h3>
+                  <h3 className="text-xs font-bold text-white leading-none">{t('chat.title', 'FinCore AI Advisor')}</h3>
                   <span className="text-[9px] text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
                     <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span>{t('chat.thinking') ? t('chat.thinking').replace('...', '') : 'Ready to assist'}</span>
@@ -824,7 +867,7 @@ export default function FloatingChatbot() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={t('chat.placeholder', 'Ask Aura about your expenses, budgets, or savings tips...')}
+                  placeholder={t('chat.placeholder', 'Ask FinCore AI about your expenses, budgets, or savings tips...')}
                   disabled={loading}
                   className="w-full bg-slate-900 border border-slate-850 rounded-xl py-2 pl-4 pr-10 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all disabled:opacity-50"
                 />
@@ -890,7 +933,7 @@ export default function FloatingChatbot() {
               onClick={voiceStatus === 'speaking' ? interruptSpeaking : undefined}
               title={voiceStatus === 'speaking' ? "Tap to stop speaking" : "FinCore Holographic Orb"}
             >
-              <ThreeDVoiceOrb status={voiceStatus} size="sm" showPedestal={true} />
+              <ThreeDVoiceOrb status={voiceStatus} size="sm" />
             </div>
 
             {/* Right Cyan Micro Waveform & Action Button */}

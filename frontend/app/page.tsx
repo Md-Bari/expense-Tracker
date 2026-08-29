@@ -185,7 +185,7 @@ export default function LandingPage() {
       image: '/hero_girl_thinking.png',
       subtitle: t('landing.slide2_sub', 'INTELLIGENT FINANCIAL COGNITION'),
       title: t('landing.slide2_title', 'Analytical Thinking For Smart Savings'),
-      desc: t('landing.slide2_desc', 'Speak naturally to Aura AI to get real-time expense category classification, sandboxed insights, and customized targets.')
+      desc: t('landing.slide2_desc', 'Speak naturally to FinCore AI to get real-time expense category classification, sandboxed insights, and customized targets.')
     },
     {
       image: '/landing_hero_mock.png',
@@ -281,7 +281,7 @@ export default function LandingPage() {
               <Phone className="h-3.5 w-3.5 text-[#0da594]" /><span>+1 (646) 364-8790</span>
             </span>
             <span className="flex items-center gap-1.5 hover:text-[#0da594] transition-colors">
-              <Mail className="h-3.5 w-3.5 text-[#0da594]" /><span>support@aura-wealth.com</span>
+              <Mail className="h-3.5 w-3.5 text-[#0da594]" /><span>support@fincore-ai.com</span>
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -539,9 +539,9 @@ export default function LandingPage() {
                 <Bot className="h-3.5 w-3.5" />
                 <span>{t('landing.demoBadge', 'Live Interaction Preview')}</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-[#052322]">{t('landing.demoTitle', 'Try Aura in Action')}</h2>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-[#052322]">{t('landing.demoTitle', 'Try FinCore AI in Action')}</h2>
               <p className="text-slate-500 text-sm leading-relaxed">
-                {t('landing.demoSub', 'Click a sample prompt to see how Aura interprets questions, analyzes expense data, and responds with structured financial insights.')}
+                {t('landing.demoSub', 'Click a sample prompt to see how FinCore AI interprets questions, analyzes expense data, and responds with structured financial insights.')}
               </p>
               
               <div className="flex flex-col gap-3 pt-2">
@@ -607,7 +607,7 @@ export default function LandingPage() {
                   {isTypingDemo && (
                     <div className="flex items-center gap-2 text-[#0da594]">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0da594]" />
-                      <span className="text-xs">{t('landing.demoAnalyzing', 'Aura is analyzing...')}</span>
+                      <span className="text-xs">{t('landing.demoAnalyzing', 'FinCore AI is analyzing...')}</span>
                     </div>
                   )}
                 </div>
@@ -674,7 +674,7 @@ export default function LandingPage() {
               {t('landing.testimonialsBadge', 'TESTIMONIALS')}
             </div>
             <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-              {t('landing.testimonialsTitle', 'What Our Users Said About Aura')}
+              {t('landing.testimonialsTitle', 'What Our Users Said About FinCore AI')}
             </h2>
           </div>
 

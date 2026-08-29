@@ -2,14 +2,13 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Mic, Sparkles, Cpu, Play } from 'lucide-react';
+import { Mic, Sparkles, Cpu } from 'lucide-react';
 
 interface ThreeDVoiceOrbProps {
   status: 'idle' | 'listening' | 'thinking' | 'speaking';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'hero';
   className?: string;
   onClick?: () => void;
-  showPedestal?: boolean;
 }
 
 export default function ThreeDVoiceOrb({
@@ -17,78 +16,103 @@ export default function ThreeDVoiceOrb({
   size = 'lg',
   className = '',
   onClick,
-  showPedestal = true,
 }: ThreeDVoiceOrbProps) {
   // Size metrics mapping
   const sizeConfig = {
-    xs: { container: 'w-20 h-24', sphere: 'w-14 h-14', core: 'w-7 h-7', pedestal: 'w-16 h-4', beam: 'h-16', icon: 'h-3.5 w-3.5' },
-    sm: { container: 'w-28 h-32', sphere: 'w-20 h-20', core: 'w-9 h-9', pedestal: 'w-22 h-5', beam: 'h-20', icon: 'h-4.5 w-4.5' },
-    md: { container: 'w-40 h-48', sphere: 'w-28 h-28', core: 'w-12 h-12', pedestal: 'w-32 h-7', beam: 'h-32', icon: 'h-6 w-6' },
-    lg: { container: 'w-56 h-64 sm:w-64 sm:h-72', sphere: 'w-40 h-40 sm:w-44 sm:h-44', core: 'w-16 h-16 sm:w-18 sm:h-18', pedestal: 'w-44 sm:w-52 h-9 sm:h-10', beam: 'h-44 sm:h-48', icon: 'h-8 w-8' },
-    xl: { container: 'w-72 h-80 sm:w-80 sm:h-96', sphere: 'w-52 h-52 sm:w-60 sm:h-60', core: 'w-20 h-20 sm:w-24 sm:h-24', pedestal: 'w-56 sm:w-64 h-11 sm:h-12', beam: 'h-56 sm:h-64', icon: 'h-10 w-10' },
-    hero: { container: 'w-88 h-96 sm:w-96 sm:h-[420px]', sphere: 'w-64 h-64 sm:w-72 sm:h-72', core: 'w-24 h-24 sm:w-28 sm:h-28', pedestal: 'w-68 sm:w-80 h-12 sm:h-14', beam: 'h-68 sm:h-80', icon: 'h-12 w-12' },
+    xs: { container: 'w-20 h-24', sphere: 'w-14 h-14', core: 'w-7 h-7', icon: 'h-3.5 w-3.5', uplight: 'w-14 h-3', beam: 'h-16', eqHeight: [3, 10, 3], eqWidth: 'w-0.5' },
+    sm: { container: 'w-28 h-32', sphere: 'w-20 h-20', core: 'w-9 h-9', icon: 'h-4.5 w-4.5', uplight: 'w-20 h-4', beam: 'h-22', eqHeight: [4, 14, 4], eqWidth: 'w-0.5' },
+    md: { container: 'w-40 h-48', sphere: 'w-28 h-28', core: 'w-12 h-12', icon: 'h-6 w-6', uplight: 'w-28 h-5', beam: 'h-32', eqHeight: [5, 20, 5], eqWidth: 'w-1' },
+    lg: { container: 'w-56 h-64 sm:w-64 sm:h-72', sphere: 'w-40 h-40 sm:w-44 sm:h-44', core: 'w-16 h-16 sm:w-18 sm:h-18', icon: 'h-8 w-8', uplight: 'w-40 sm:w-48 h-6', beam: 'h-44 sm:h-48', eqHeight: [6, 28, 6], eqWidth: 'w-1.5' },
+    xl: { container: 'w-72 h-80 sm:w-80 sm:h-96', sphere: 'w-52 h-52 sm:w-60 sm:h-60', core: 'w-20 h-20 sm:w-24 sm:h-24', icon: 'h-10 w-10', uplight: 'w-52 sm:w-60 h-7', beam: 'h-56 sm:h-64', eqHeight: [8, 36, 8], eqWidth: 'w-2' },
+    hero: { container: 'w-88 h-96 sm:w-96 sm:h-[420px]', sphere: 'w-64 h-64 sm:w-72 sm:h-72', core: 'w-24 h-24 sm:w-28 sm:h-28', icon: 'h-12 w-12', uplight: 'w-64 sm:w-72 h-8', beam: 'h-68 sm:h-80', eqHeight: [10, 48, 10], eqWidth: 'w-2.5' },
   };
 
   const cfg = sizeConfig[size] || sizeConfig.lg;
 
   // Status colors & gradients
-  const getCoreGradient = () => {
+  const getGradient = () => {
     switch (status) {
       case 'listening':
-        return 'from-cyan-300 via-teal-400 to-blue-500';
+        return 'from-cyan-400 via-teal-500 to-blue-600';
       case 'thinking':
-        return 'from-fuchsia-400 via-purple-500 to-indigo-600';
+        return 'from-fuchsia-500 via-purple-600 to-indigo-600';
       case 'speaking':
-        return 'from-cyan-300 via-emerald-400 to-teal-500';
+        return 'from-emerald-400 via-teal-500 to-cyan-500';
       default:
-        return 'from-cyan-300 via-teal-400 to-blue-600';
+        return 'from-teal-400 via-cyan-500 to-indigo-600';
+    }
+  };
+
+  const getGlowColor = () => {
+    switch (status) {
+      case 'listening':
+        return 'shadow-[0_0_80px_rgba(6,182,212,0.7)]';
+      case 'thinking':
+        return 'shadow-[0_0_90px_rgba(217,70,239,0.75)]';
+      case 'speaking':
+        return 'shadow-[0_0_90px_rgba(16,185,129,0.8)]';
+      default:
+        return 'shadow-[0_0_60px_rgba(13,165,148,0.55)]';
+    }
+  };
+
+  const getBorderColor = () => {
+    switch (status) {
+      case 'listening':
+        return 'border-cyan-300/60';
+      case 'thinking':
+        return 'border-fuchsia-400/60';
+      case 'speaking':
+        return 'border-emerald-300/60';
+      default:
+        return 'border-teal-400/50';
     }
   };
 
   return (
-    <div
+    <div 
       onClick={onClick}
       className={`relative flex flex-col items-center justify-end select-none ${cfg.container} ${className}`}
     >
-      {/* ─── 1. HOLOGRAPHIC LIGHT CONE PROJECTION BEAM ─────────────────── */}
-      {showPedestal && (
-        <div
-          className={`absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 w-4/5 ${cfg.beam} pointer-events-none z-0 overflow-hidden`}
-        >
-          {/* Conical Light Beam Gradient */}
-          <div
-            className="w-full h-full bg-gradient-to-t from-cyan-400/40 via-teal-400/15 to-transparent [clip-path:polygon(20%_0%,80%_0%,100%_100%,0%_100%)] opacity-80"
+      {/* ─── 1. UPWARD HOLOGRAPHIC LIGHT BEAM (ILLUMINATING FROM BOTTOM) ───── */}
+      <div className={`absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 w-4/5 ${cfg.beam} pointer-events-none z-0 overflow-hidden`}>
+        {/* Soft Conical Light Beam Gradient */}
+        <motion.div
+          animate={{
+            opacity: status === 'speaking' ? [0.65, 0.95, 0.65] : status === 'listening' ? [0.55, 0.85, 0.55] : [0.45, 0.7, 0.45],
+          }}
+          transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
+          className="w-full h-full bg-gradient-to-t from-cyan-400/40 via-teal-400/15 to-transparent [clip-path:polygon(20%_0%,80%_0%,100%_100%,0%_100%)]"
+        />
+
+        {/* Upward Floating Luminous Particles ascending into the orb */}
+        {[1, 2, 3, 4, 5].map((p) => (
+          <motion.div
+            key={p}
+            animate={{
+              y: [0, -90],
+              x: [0, p % 2 === 0 ? 6 : -6],
+              opacity: [0, 0.9, 0],
+              scale: [0.5, 1.2, 0.4],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 2 + p * 0.35,
+              delay: p * 0.3,
+              ease: 'easeInOut',
+            }}
+            className="absolute rounded-full bg-cyan-200 shadow-[0_0_8px_#22d3ee]"
+            style={{
+              bottom: '10%',
+              left: `${20 + p * 12}%`,
+              width: `${p % 2 === 0 ? 3 : 2}px`,
+              height: `${p % 2 === 0 ? 3 : 2}px`,
+            }}
           />
+        ))}
+      </div>
 
-          {/* Upward Floating Stardust Holographic Particles */}
-          {[1, 2, 3, 4, 5, 6].map((p) => (
-            <motion.div
-              key={p}
-              animate={{
-                y: [0, -120],
-                x: [0, (p % 2 === 0 ? 8 : -8)],
-                opacity: [0, 0.9, 0],
-                scale: [0.6, 1.2, 0.4],
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 2.2 + p * 0.4,
-                delay: p * 0.35,
-                ease: 'easeInOut',
-              }}
-              className="absolute rounded-full bg-cyan-200 shadow-[0_0_8px_#22d3ee]"
-              style={{
-                bottom: '10%',
-                left: `${20 + p * 10}%`,
-                width: `${p % 2 === 0 ? 3 : 2}px`,
-                height: `${p % 2 === 0 ? 3 : 2}px`,
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* ─── 2. FLOATING HOLOGRAPHIC ATOMIC SPHERE & 3D ORBITAL RINGS ───── */}
+      {/* ─── 2. FLOATING 3D GYROSCOPIC ORB & ATOMIC RINGS ─────────────── */}
       <motion.div
         animate={{
           y: status === 'speaking' ? [-4, 6, -4] : [-3, 3, -3],
@@ -98,205 +122,191 @@ export default function ThreeDVoiceOrb({
           duration: status === 'speaking' ? 2 : 3.5,
           ease: 'easeInOut',
         }}
-        className={`relative flex items-center justify-center ${cfg.sphere} mb-4 sm:mb-6 z-10 [perspective:1000px]`}
+        className={`relative flex items-center justify-center ${cfg.sphere} mb-3 sm:mb-4 z-10 [perspective:1200px]`}
       >
-        {/* Ambient Backlight Glow / Aura Mist */}
+        {/* Deep Volumetric Ambient Glow */}
         <motion.div
           animate={{
-            scale: status === 'speaking' ? [1, 1.25, 1] : [1, 1.12, 1],
-            opacity: status === 'speaking' ? [0.6, 0.9, 0.6] : [0.4, 0.7, 0.4],
+            scale: status === 'speaking' ? [1, 1.35, 1.05, 1.4, 1] : status === 'thinking' ? [1.1, 1.25, 1.1] : [1, 1.15, 1],
+            opacity: status === 'speaking' ? [0.65, 0.95, 0.65] : status === 'listening' ? [0.55, 0.85, 0.55] : [0.4, 0.65, 0.4],
           }}
-          transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-          className="absolute inset-2 rounded-full bg-gradient-to-tr from-cyan-500/40 via-fuchsia-500/30 to-teal-400/40 blur-2xl pointer-events-none"
+          transition={{ repeat: Infinity, duration: status === 'speaking' ? 1.4 : 2.5, ease: 'easeInOut' }}
+          className={`absolute inset-2 rounded-full bg-gradient-to-tr ${getGradient()} blur-2xl md:blur-3xl opacity-70 ${getGlowColor()}`}
         />
 
-        {/* Outer Translucent Holographic Glass Containment Sphere */}
-        <div className="absolute inset-0 rounded-full border border-cyan-400/40 bg-radial from-cyan-400/10 via-transparent to-transparent shadow-[0_0_25px_rgba(34,211,238,0.35)] backdrop-blur-[1px]" />
+        {/* Concentric Acoustic Soundwave Ripples */}
+        {(status === 'speaking' || status === 'listening') && (
+          <>
+            {[1, 2, 3].map((wave) => (
+              <motion.div
+                key={wave}
+                animate={{
+                  scale: [1, 1.55 + wave * 0.3],
+                  opacity: [0.75, 0],
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: status === 'speaking' ? 1.8 : 2.4,
+                  delay: wave * 0.45,
+                  ease: 'easeOut',
+                }}
+                className={`absolute inset-2 rounded-full border border-dashed ${
+                  status === 'speaking' ? 'border-emerald-400/40 shadow-[0_0_15px_rgba(52,211,153,0.4)]' : 'border-cyan-400/40 shadow-[0_0_15px_rgba(34,211,238,0.4)]'
+                }`}
+              />
+            ))}
+          </>
+        )}
 
-        {/* Star Sparkles floating in the orb */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
-          className="absolute inset-2 pointer-events-none"
-        >
-          <div className="absolute top-2 left-6 w-1 h-1 rounded-full bg-white shadow-[0_0_6px_#fff]" />
-          <div className="absolute top-8 right-4 w-1.5 h-1.5 rounded-full bg-cyan-200 shadow-[0_0_8px_#22d3ee]" />
-          <div className="absolute bottom-5 left-8 w-1 h-1 rounded-full bg-pink-200 shadow-[0_0_6px_#f472b6]" />
-          <div className="absolute bottom-8 right-8 w-1.5 h-1.5 rounded-full bg-teal-200 shadow-[0_0_8px_#2dd4bf]" />
-        </motion.div>
-
-        {/* ─── 3D ATOMIC ORBITAL RING 1: PINK / MAGENTA (Tilted 55° X, -25° Y) ─── */}
+        {/* 3D Floating Gyroscopic Ring 1 (Pink/Fuchsia Gyroscope) */}
         <motion.div
           animate={{
+            rotateX: [65, 65],
             rotateZ: [0, 360],
-            scale: status === 'speaking' ? [1, 1.08, 1] : [1, 1.03, 1],
+            scale: status === 'speaking' ? [1, 1.12, 1] : [1, 1.04, 1],
           }}
           transition={{
-            rotateZ: { repeat: Infinity, duration: status === 'thinking' ? 3 : 7, ease: 'linear' },
-            scale: { repeat: Infinity, duration: 1.8, ease: 'easeInOut' },
-          }}
-          style={{
-            transformStyle: 'preserve-3d',
-            transform: 'rotateX(55deg) rotateY(-25deg)',
-          }}
-          className="absolute inset-1 rounded-full border-[2.5px] border-pink-400/80 border-t-fuchsia-300 border-b-pink-500 shadow-[0_0_16px_rgba(244,114,182,0.85)] pointer-events-none"
-        >
-          {/* Glowing Photon Bead on Pink Ring */}
-          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-pink-300 shadow-[0_0_12px_#f472b6]" />
-        </motion.div>
-
-        {/* ─── 3D ATOMIC ORBITAL RING 2: CYAN / TEAL (Tilted -55° X, 30° Y) ─── */}
-        <motion.div
-          animate={{
-            rotateZ: [360, 0],
-            scale: status === 'speaking' ? [1, 1.1, 1] : [1, 1.04, 1],
-          }}
-          transition={{
-            rotateZ: { repeat: Infinity, duration: status === 'thinking' ? 2.8 : 6.5, ease: 'linear' },
+            rotateZ: { repeat: Infinity, duration: status === 'thinking' ? 3.5 : status === 'speaking' ? 5 : 8, ease: 'linear' },
             scale: { repeat: Infinity, duration: 2, ease: 'easeInOut' },
           }}
-          style={{
-            transformStyle: 'preserve-3d',
-            transform: 'rotateX(-55deg) rotateY(30deg)',
-          }}
-          className="absolute inset-1 rounded-full border-[2.5px] border-cyan-400/85 border-t-cyan-200 border-b-teal-500 shadow-[0_0_16px_rgba(34,211,238,0.85)] pointer-events-none"
+          style={{ transformStyle: 'preserve-3d' }}
+          className="absolute inset-1.5 rounded-full border-2 border-pink-400/40 border-t-pink-300 border-r-fuchsia-400 shadow-[0_0_18px_rgba(244,114,182,0.6)]"
         >
-          {/* Glowing Photon Bead on Cyan Ring */}
-          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-cyan-300 shadow-[0_0_12px_#22d3ee]" />
+          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-pink-300 shadow-[0_0_14px_#f472b6]" />
+          <div className="absolute -bottom-1 left-1/4 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-fuchsia-200 shadow-[0_0_8px_#e879f9]" />
         </motion.div>
 
-        {/* ─── 3D ATOMIC ORBITAL RING 3: GOLD / AMBER (Tilted 70° X) ─── */}
+        {/* 3D Floating Gyroscopic Ring 2 (Cyan/Teal Gyroscope) */}
         <motion.div
           animate={{
+            rotateY: [65, 65],
+            rotateZ: [360, 0],
+            scale: status === 'speaking' ? [1, 1.15, 1] : [1, 1.05, 1],
+          }}
+          transition={{
+            rotateZ: { repeat: Infinity, duration: status === 'thinking' ? 3 : status === 'speaking' ? 5.5 : 9.5, ease: 'linear' },
+            scale: { repeat: Infinity, duration: 2.2, ease: 'easeInOut' },
+          }}
+          style={{ transformStyle: 'preserve-3d' }}
+          className="absolute inset-1.5 rounded-full border-2 border-cyan-400/40 border-b-cyan-300 border-l-teal-400 shadow-[0_0_18px_rgba(34,211,238,0.6)]"
+        >
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-cyan-300 shadow-[0_0_14px_#22d3ee]" />
+          <div className="absolute top-1 right-1/4 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-teal-200 shadow-[0_0_8px_#2dd4bf]" />
+        </motion.div>
+
+        {/* 3D Diagonal Orbit Track */}
+        <motion.div
+          animate={{
+            rotateX: [45, 45],
+            rotateY: [45, 45],
             rotateZ: [0, 360],
           }}
           transition={{
-            rotateZ: { repeat: Infinity, duration: 9, ease: 'linear' },
-          }}
-          style={{
-            transformStyle: 'preserve-3d',
-            transform: 'rotateX(70deg)',
-          }}
-          className="absolute inset-4 rounded-full border border-amber-300/40 border-t-amber-200/90 shadow-[0_0_10px_rgba(252,211,77,0.4)] pointer-events-none"
-        />
-
-        {/* ─── CENTER FLOATING 3D PRISMATIC DELTA / TRIANGLE CRYSTAL CORE ─── */}
-        <motion.div
-          animate={{
-            rotateY: [0, 360],
-            scale: status === 'speaking' ? [1, 1.18, 0.95, 1.15, 1] : status === 'listening' ? [1, 1.08, 1] : [1, 1.05, 1],
-          }}
-          transition={{
-            rotateY: { repeat: Infinity, duration: status === 'thinking' ? 3 : 8, ease: 'linear' },
-            scale: { repeat: Infinity, duration: 1.8, ease: 'easeInOut' },
+            rotateZ: { repeat: Infinity, duration: status === 'thinking' ? 4 : 12, ease: 'linear' },
           }}
           style={{ transformStyle: 'preserve-3d' }}
-          className={`relative ${cfg.core} flex items-center justify-center z-20 cursor-pointer`}
+          className="absolute inset-3 rounded-full border border-dashed border-cyan-300/30 shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+        />
+
+        {/* Central Holographic Quantum Core Sphere */}
+        <motion.div
+          animate={{
+            scale: status === 'speaking' ? [1, 1.15, 0.96, 1.12, 1] : status === 'thinking' ? [1, 1.08, 1] : [1, 1.03, 1],
+          }}
+          transition={{
+            scale: { repeat: Infinity, duration: status === 'speaking' ? 0.9 : 2.2, ease: 'easeInOut' },
+          }}
+          className={`relative ${cfg.core} rounded-full bg-gradient-to-br ${getGradient()} p-1 flex items-center justify-center ${getGlowColor()} border-2 ${getBorderColor()} backdrop-blur-2xl shadow-2xl transition-all duration-500`}
         >
-          {/* 3D Cyan Triangular Prism Play-Glyph (Matching Image) */}
-          <div className="relative w-full h-full flex items-center justify-center filter drop-shadow-[0_0_18px_rgba(34,211,238,0.9)]">
-            <svg
-              viewBox="0 0 100 100"
-              className="w-full h-full transform transition-transform"
-            >
-              <defs>
-                <linearGradient id="triGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#67e8f9" />
-                  <stop offset="50%" stopColor="#2dd4bf" />
-                  <stop offset="100%" stopColor="#0891b2" />
-                </linearGradient>
-                <linearGradient id="triTopFace" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#67e8f9" stopOpacity="0.3" />
-                </linearGradient>
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                  <feMerge>
-                    <feMergeNode in="coloredBlur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
+          <div className="w-full h-full rounded-full bg-slate-950/50 backdrop-blur-md flex items-center justify-center relative overflow-hidden border border-white/40">
+            <motion.div
+              animate={{
+                rotate: [0, 360],
+                opacity: [0.35, 0.9, 0.35],
+              }}
+              transition={{ repeat: Infinity, duration: status === 'thinking' ? 2 : 4.5, ease: 'linear' }}
+              className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/60 via-cyan-400/25 to-transparent"
+            />
 
-              {/* 3D Isometric Extrusion Shadow/Bottom Face */}
-              <polygon
-                points="30,22 82,52 30,82"
-                fill="#0e7490"
-                opacity="0.7"
-                transform="translate(4, 6)"
-              />
+            {/* Central State Indicator */}
+            <div className="relative z-10 text-white flex flex-col items-center justify-center">
+              {status === 'listening' && (
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 1 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <Mic className={`${cfg.icon} text-cyan-300 drop-shadow-[0_0_12px_rgba(34,211,238,0.95)]`} />
+                </motion.div>
+              )}
 
-              {/* Main Glowing 3D Triangular Prism Face */}
-              <polygon
-                points="28,20 80,50 28,80"
-                fill="url(#triGradient)"
-                stroke="#a5f3fc"
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-                filter="url(#glow)"
-              />
+              {status === 'thinking' && (
+                <motion.div
+                  animate={{ rotate: 360, scale: [1, 1.15, 1] }}
+                  transition={{ rotate: { repeat: Infinity, duration: 2.2, ease: 'linear' }, scale: { repeat: Infinity, duration: 1.1, ease: 'easeInOut' } }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <Cpu className={`${cfg.icon} text-fuchsia-300 drop-shadow-[0_0_14px_rgba(244,114,182,1)]`} />
+                </motion.div>
+              )}
 
-              {/* Internal Glass Highlight Facet */}
-              <polygon
-                points="30,24 74,50 30,50"
-                fill="url(#triTopFace)"
-                opacity="0.75"
-              />
-            </svg>
+              {status === 'speaking' && (
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  {[1, 2, 3, 4, 5].map((bar) => (
+                    <motion.div
+                      key={bar}
+                      animate={{ height: cfg.eqHeight }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 0.45,
+                        delay: bar * 0.08,
+                        ease: 'easeInOut',
+                      }}
+                      className={`${cfg.eqWidth} rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]`}
+                    />
+                  ))}
+                </div>
+              )}
 
-            {/* Micro Audio Equalizer Pulse in Center when Speaking */}
-            {status === 'speaking' && (
-              <div className="absolute inset-0 flex items-center justify-center gap-0.5">
-                {[1, 2, 3].map((b) => (
-                  <motion.div
-                    key={b}
-                    animate={{ height: [3, 12, 3] }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 0.4,
-                      delay: b * 0.1,
-                      ease: 'easeInOut',
-                    }}
-                    className="w-0.5 rounded-full bg-white shadow-[0_0_6px_#fff]"
-                  />
-                ))}
-              </div>
-            )}
+              {status === 'idle' && (
+                <motion.div
+                  animate={{ scale: [1, 1.12, 1], opacity: [0.85, 1, 0.85] }}
+                  transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+                >
+                  <Sparkles className={`${cfg.icon} text-teal-200 drop-shadow-[0_0_12px_rgba(45,212,191,0.9)]`} />
+                </motion.div>
+              )}
+            </div>
           </div>
         </motion.div>
       </motion.div>
 
-      {/* ─── 3. ILLUMINATED CYBERNETIC HOLOGRAPHIC PEDESTAL BASE ────────── */}
-      {showPedestal && (
-        <div className={`relative ${cfg.pedestal} flex items-center justify-center z-10`}>
-          {/* Base Ambient Underglow */}
-          <div className="absolute inset-0 bg-cyan-400/40 blur-lg rounded-full" />
+      {/* ─── 3. LUMINOUS GLOWING UPLIGHT BASE EMITTER (LIGHTING FROM BOTTOM) ───── */}
+      <div className={`relative ${cfg.uplight} flex items-center justify-center z-10`}>
+        {/* Soft Radial Underglow */}
+        <div className="absolute inset-0 bg-cyan-400/40 blur-md rounded-full" />
 
-          {/* Outer Metallic Beveled Platform Base Ring */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-b from-slate-700 via-slate-900 to-slate-950 border border-teal-500/50 shadow-[0_4px_20px_rgba(0,0,0,0.8),_inset_0_1px_2px_rgba(255,255,255,0.4)] flex items-center justify-center">
-            {/* Outer Cyan Cyber LED Track */}
-            <div className="absolute inset-0.5 rounded-full border border-cyan-400/40 border-dashed" />
+        {/* Luminous Elliptical Light Platform Ring */}
+        <div className="relative w-full h-full rounded-full bg-gradient-to-r from-teal-500/20 via-cyan-400/50 to-teal-500/20 border border-cyan-400/60 shadow-[0_0_20px_rgba(34,211,238,0.7)] flex items-center justify-center backdrop-blur-sm">
+          {/* Inner Bright Cyan Emitter Core */}
+          <motion.div
+            animate={{
+              boxShadow: [
+                '0 0 10px rgba(34,211,238,0.8), inset 0 0 6px #fff',
+                '0 0 24px rgba(34,211,238,1), inset 0 0 10px #fff',
+                '0 0 10px rgba(34,211,238,0.8), inset 0 0 6px #fff',
+              ],
+              opacity: [0.85, 1, 0.85],
+            }}
+            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+            className="w-3/5 h-2/3 rounded-full bg-gradient-to-r from-cyan-300 via-white to-cyan-300"
+          />
 
-            {/* Glowing Emitter Disk Center */}
-            <motion.div
-              animate={{
-                boxShadow: [
-                  '0 0 10px rgba(34,211,238,0.7)',
-                  '0 0 22px rgba(34,211,238,1)',
-                  '0 0 10px rgba(34,211,238,0.7)',
-                ],
-              }}
-              transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
-              className="w-3/5 h-3/5 rounded-full bg-gradient-to-tr from-cyan-300 via-teal-300 to-cyan-100 border border-white/80 shadow-[0_0_15px_#22d3ee]"
-            />
-
-            {/* Perimeter Micro LED Sparkle Nodes */}
-            <div className="absolute left-3 w-1.5 h-1.5 rounded-full bg-cyan-300 shadow-[0_0_6px_#22d3ee]" />
-            <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-cyan-300 shadow-[0_0_6px_#22d3ee]" />
-            <div className="absolute top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white shadow-[0_0_4px_#fff]" />
-          </div>
+          {/* Micro Ambient Sparkle Nodes */}
+          <div className="absolute left-2 w-1 h-1 rounded-full bg-cyan-200 shadow-[0_0_4px_#22d3ee]" />
+          <div className="absolute right-2 w-1 h-1 rounded-full bg-cyan-200 shadow-[0_0_4px_#22d3ee]" />
         </div>
-      )}
+      </div>
     </div>
   );
 }

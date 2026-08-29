@@ -2,16 +2,9 @@
 
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import FloatingChatbot from '@/components/FloatingChatbot';
-
-function FloatingChatbotWrapper() {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return null;
-  return <FloatingChatbot />;
-}
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -32,7 +25,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <LanguageProvider>
           <AuthProvider>
             {children}
-            <FloatingChatbotWrapper />
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>
